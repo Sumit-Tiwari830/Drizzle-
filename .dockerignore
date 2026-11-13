@@ -1,0 +1,32 @@
+# Dependency directories
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git repository
+.git
+.gitignore
+.github
+
+# Environment variables (SECURITY RISK)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Docker-related files
+Dockerfile
+.dockerignore
+
+# Build outputs (if you build locally before copying)
+dist/
+build/
+
+# OS/macOS generated files
+.DS_Store
