@@ -177,6 +177,7 @@ export class AuthService {
 
     return {
       token,
+      accessToken: token,
       user: {
         id: user.id,
         email: user.email,
@@ -218,12 +219,27 @@ export class AuthService {
     await OtpService.verifyOtp(email, otpInput, "EMAIL_VERIFICATION");
 
     // Update user record
-    await db
+    const [updatedUser] = await db
       .update(users)
       .set({ isEmailVerified: true, updatedAt: new Date() })
-      .where(eq(users.id, user.id));
+      .where(eq(users.id, user.id))
+      .returning();
 
-    return { message: "Email successfully verified! You now have full access to dating features." };
+    const token = generateToken({ id: updatedUser.id, email: updatedUser.email, role: updatedUser.role });
+
+    return {
+      message: "Email successfully verified! You now have full access to dating features.",
+      token,
+      accessToken: token,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isVerified: updatedUser.isVerified,
+        isEmailVerified: updatedUser.isEmailVerified,
+        isLocked: updatedUser.isLocked,
+      },
+    };
   }
 
   /**

@@ -80,7 +80,7 @@ export class AuthController {
       }
 
       const result = await AuthService.verifyEmail(email, otp);
-      return sendResponse(res, 200, true, result.message);
+      return sendResponse(res, 200, true, result.message, result);
     } catch (error) {
       next(error);
     }

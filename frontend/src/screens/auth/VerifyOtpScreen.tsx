@@ -40,8 +40,12 @@ export const VerifyOtpScreen = ({ route, navigation }: any) => {
       setLoading(true);
       const res = await authApi.verifyOtp(email, otp.trim());
       Alert.alert("Account Verified!", "Your email has been verified. Welcome to Exclusive!");
-      // Log the user in with returned tokens
-      await login(res.data.accessToken, res.data.user);
+      const token = res.data?.accessToken || res.data?.token;
+      if (token && res.data?.user) {
+        await login(token, res.data.user);
+      } else {
+        navigation.navigate("Login");
+      }
     } catch (err: any) {
       Alert.alert("Verification Error", err.message || "Invalid or expired OTP code.");
     } finally {

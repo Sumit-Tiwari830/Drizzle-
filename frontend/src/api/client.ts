@@ -28,8 +28,10 @@ apiClient.interceptors.request.use(
   async (config) => {
     try {
       const token = await storage.getItemAsync("accessToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (token && token !== "undefined" && token !== "null" && token.trim().length > 10) {
+        config.headers.Authorization = `Bearer ${token.trim()}`;
+      } else {
+        delete config.headers.Authorization;
       }
     } catch (err) {
       console.warn("Error reading access token:", err);

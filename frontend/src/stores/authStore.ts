@@ -25,6 +25,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
 
   login: async (token: string, user: User) => {
+    if (!token || token === "undefined" || token === "null") {
+      console.warn("Attempted to login with invalid token:", token);
+      return;
+    }
     await storage.setItemAsync("accessToken", token);
     set({ accessToken: token, user, isAuthenticated: true });
     // Fetch user profile immediately
@@ -45,10 +49,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const token = await storage.getItemAsync("accessToken");
-      if (token) {
+      if (token && token !== "undefined" && token !== "null" && token.trim().length > 10) {
         set({ accessToken: token, isAuthenticated: true });
         const profile = await profileApi.getMyProfile();
         set({ profile });
+      } else {
+        await storage.deleteItemAsync("accessToken");
+        set({ user: null, profile: null, accessToken: null, isAuthenticated: false });
       }
     } catch (err) {
       console.warn("Session check error / unauthenticated:", err);

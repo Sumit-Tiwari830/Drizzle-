@@ -25,7 +25,16 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded: JwtPayload = verifyToken(token);
+    if (!token || token === "undefined" || token === "null") {
+      throw new ApiError(401, "Authentication token missing or invalid");
+    }
+
+    let decoded: JwtPayload;
+    try {
+      decoded = verifyToken(token);
+    } catch (jwtError: any) {
+      throw new ApiError(401, "Invalid or expired authentication token");
+    }
 
     const [user] = await db
       .select()

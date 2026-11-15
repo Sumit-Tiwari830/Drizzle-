@@ -37,7 +37,11 @@ export const LoginScreen = ({ navigation }: any) => {
         navigation.navigate("VerifyOtp", { email: email.trim().toLowerCase() });
         return;
       }
-      await login(res.data.accessToken, res.data.user);
+      const token = res.data?.accessToken || res.data?.token;
+      if (!token) {
+        throw new Error("Authentication token not returned by server.");
+      }
+      await login(token, res.data.user);
     } catch (err: any) {
       Alert.alert("Login Failed", err.message || "Invalid credentials.");
     } finally {
