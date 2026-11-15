@@ -19,7 +19,7 @@ export class ChatController {
   static async getMessages(req: Request, res: Response, next: NextFunction) {
     try {
       const currentUserId = req.user!.id;
-      const { matchId } = req.params;
+      const matchId = req.params.matchId as string;
 
       if (!matchId) {
         throw new ApiError(400, "matchId parameter is required to retrieve chat history");

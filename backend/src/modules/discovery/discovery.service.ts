@@ -12,7 +12,9 @@ export class DiscoveryService {
    * - Privacy: If candidate has isPublicReveal = false, actualName and realPhotos are hidden!
    * - Ex-Match Warning: Warns user if they previously matched and unmatched with a candidate (even if username changed).
    */
-  static async getFeed(currentUserId: string) {
+  static async getFeed(currentUserId: string, page: number = 1, limit: number = 20) {
+    const offset = Math.max(0, (page - 1) * limit);
+
     // 1. Fetch current user profile to check preferences
     const [myProfile] = await db
       .select()
@@ -64,7 +66,18 @@ export class DiscoveryService {
       }
     }
 
-    // 4. Query available candidate users
+    // 4. Build query filters with gender preference
+    const whereConditions = [
+      eq(users.isLocked, false), // Exclude locked / matched users
+      eq(users.isDeleted, false), // Exclude deleted accounts
+      notInArray(users.id, Array.from(excludedUserIds)),
+    ];
+
+    if (myProfile?.interestedIn && myProfile.interestedIn !== "everyone") {
+      whereConditions.push(eq(profiles.gender, myProfile.interestedIn));
+    }
+
+    // 5. Query available candidate users with pagination
     const candidates = await db
       .select({
         userId: users.id,
@@ -83,14 +96,9 @@ export class DiscoveryService {
       })
       .from(users)
       .innerJoin(profiles, eq(users.id, profiles.userId))
-      .where(
-        and(
-          eq(users.isLocked, false), // Exclude locked / matched users
-          eq(users.isDeleted, false), // Exclude deleted accounts
-          notInArray(users.id, Array.from(excludedUserIds))
-        )
-      )
-      .limit(30);
+      .where(and(...whereConditions))
+      .limit(limit)
+      .offset(offset);
 
     // 5. Sanitize profiles based on privacy / reveal settings and attach ex-match warnings
     return candidates.map((candidate) => {

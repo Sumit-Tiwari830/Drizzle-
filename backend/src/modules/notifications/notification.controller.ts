@@ -30,7 +30,7 @@ export class NotificationController {
   static async markAsRead(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const updated = await NotificationService.markAsRead(id, userId);
       return sendResponse(res, 200, true, "Notification marked as read", updated);
@@ -52,7 +52,7 @@ export class NotificationController {
   static async deleteNotification(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await NotificationService.deleteNotification(id, userId);
       return sendResponse(res, 200, true, result.message);

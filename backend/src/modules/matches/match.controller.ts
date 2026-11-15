@@ -17,7 +17,7 @@ export class MatchController {
   static async requestProfileReveal(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await MatchService.requestProfileReveal(id, userId);
       return sendResponse(res, 200, true, result.message, result);
@@ -29,7 +29,7 @@ export class MatchController {
   static async unmatch(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { id } = req.params;
+      const id = req.params.id as string;
       const io = req.app.get("io");
 
       const result = await MatchService.unmatch(id, userId, io);

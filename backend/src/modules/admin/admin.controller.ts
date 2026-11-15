@@ -28,7 +28,7 @@ export class AdminController {
 
   static async verifyUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await AdminService.verifyUser(id);
       return sendResponse(res, 200, true, result.message);
     } catch (error) {

@@ -9,6 +9,9 @@ const { Pool } = pg;
 
 const poolConfig: pg.PoolConfig = {
   connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/dating_app",
+  max: 30, // Optimized connection pool size for high concurrency
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 };
 
 if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes("neon.tech")) {

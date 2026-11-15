@@ -159,53 +159,68 @@ export class RequestService {
     }
 
     // Action === "ACCEPT"
-    const [sender] = await db.select().from(users).where(eq(users.id, senderId)).limit(1);
-    const [receiver] = await db.select().from(users).where(eq(users.id, receiverId)).limit(1);
-
-    if (sender?.isLocked || receiver?.isLocked) {
-      throw new ApiError(400, "One of the candidates is already in another active match");
-    }
-
     // Check if they previously unmatched so we can include a notice in the match response
     const previousUnmatch = await this.getPreviousUnmatch(senderId, receiverId);
     const previouslyUnmatched = Boolean(previousUnmatch);
 
-    // 1. Mark request ACCEPTED
-    await db
-      .update(requests)
-      .set({ status: "ACCEPTED", respondedAt: new Date() })
-      .where(eq(requests.id, requestId));
+    // Normalize pair order to prevent (A, B) vs (B, A) race condition duplicate pairs
+    const [u1, u2] = senderId < receiverId ? [senderId, receiverId] : [receiverId, senderId];
 
-    // 2. Create Active Match
-    const [newMatch] = await db
-      .insert(matches)
-      .values({
-        user1Id: senderId,
-        user2Id: receiverId,
-        status: "ACTIVE",
-        user1RevealAccepted: false,
-        user2RevealAccepted: false,
-      })
-      .returning();
-
-    // 3. LOCK both users (neither can send nor receive any requests)
-    await db.update(users).set({ isLocked: true }).where(or(eq(users.id, senderId), eq(users.id, receiverId)));
-
-    // 4. Cancel all other pending requests involving either candidate
-    await db
-      .update(requests)
-      .set({ status: "CANCELLED", respondedAt: new Date() })
-      .where(
-        and(
-          eq(requests.status, "PENDING"),
-          or(
-            eq(requests.senderId, senderId),
-            eq(requests.receiverId, senderId),
-            eq(requests.senderId, receiverId),
-            eq(requests.receiverId, receiverId)
+    // ATOMIC TRANSACTION: Guarantees zero race conditions under concurrent requests
+    const newMatch = await db.transaction(async (tx) => {
+      // 1. Atomically lock both candidates IF AND ONLY IF neither is currently locked
+      const lockedRows = await tx
+        .update(users)
+        .set({ isLocked: true })
+        .where(
+          and(
+            or(eq(users.id, senderId), eq(users.id, receiverId)),
+            eq(users.isLocked, false),
+            eq(users.isDeleted, false)
           )
         )
-      );
+        .returning({ id: users.id });
+
+      if (lockedRows.length !== 2) {
+        throw new ApiError(400, "One or both candidates are already in an active match");
+      }
+
+      // 2. Mark request ACCEPTED
+      await tx
+        .update(requests)
+        .set({ status: "ACCEPTED", respondedAt: new Date() })
+        .where(eq(requests.id, requestId));
+
+      // 3. Create Active Match with normalized pair order (u1 < u2)
+      const [match] = await tx
+        .insert(matches)
+        .values({
+          user1Id: u1,
+          user2Id: u2,
+          status: "ACTIVE",
+          user1RevealAccepted: false,
+          user2RevealAccepted: false,
+        })
+        .returning();
+
+      // 4. Cancel all other pending requests involving either candidate
+      await tx
+        .update(requests)
+        .set({ status: "CANCELLED", respondedAt: new Date() })
+        .where(
+          and(
+            eq(requests.status, "PENDING"),
+            or(
+              eq(requests.senderId, senderId),
+              eq(requests.receiverId, senderId),
+              eq(requests.senderId, receiverId),
+              eq(requests.receiverId, receiverId)
+            )
+          )
+        );
+
+      return match;
+    });
 
     return {
       message: previouslyUnmatched

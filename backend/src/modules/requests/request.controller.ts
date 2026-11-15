@@ -23,7 +23,7 @@ export class RequestController {
   static async respondToRequest(req: Request, res: Response, next: NextFunction) {
     try {
       const receiverId = req.user!.id;
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { action } = req.body;
 
       if (!action || !["ACCEPT", "REJECT"].includes(action)) {

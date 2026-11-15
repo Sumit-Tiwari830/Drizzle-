@@ -14,6 +14,9 @@ declare global {
   }
 }
 
+/**
+ * Verifies JWT token and attaches authenticated user to Request
+ */
 export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
@@ -41,9 +44,41 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.user || req.user.role !== "ADMIN") {
-    return next(new ApiError(403, "Access denied: Admin privileges required"));
+/**
+ * Role-Based Access Control (RBAC) middleware factory.
+ * Enforces that the authenticated user possesses one of the allowed roles.
+ */
+export const authorizeRoles = (...roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      return next(new ApiError(401, "Authentication required"));
+    }
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new ApiError(
+          403,
+          `Access denied: Required role (${roles.join(" or ")}). Current role: ${req.user.role}`
+        )
+      );
+    }
+    next();
+  };
+};
+
+/**
+ * Shortcut helper for Admin-only routes
+ */
+export const requireAdmin = authorizeRoles("ADMIN");
+
+/**
+ * Middleware ensuring user has verified their email address via OTP.
+ */
+export const requireEmailVerified = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    return next(new ApiError(401, "Authentication required"));
+  }
+  if (!req.user.isEmailVerified) {
+    return next(new ApiError(403, "Email address not verified. Please verify your email with OTP first."));
   }
   next();
 };

@@ -6,6 +6,8 @@ import { generateToken } from "../../utils/jwt.js";
 import { ApiError } from "../../utils/apiError.js";
 import { Message } from "../../db/msg_schema.js";
 import { NotificationService } from "../notifications/notification.service.js";
+import { OtpService } from "../../services/otp.service.js";
+import { OtpEmailType } from "../../services/email.service.js";
 
 interface RegisterInput {
   email: string;
@@ -77,7 +79,7 @@ export class AuthService {
 
     const passwordHash = await hashPassword(input.password);
 
-    // 4. Create User Record
+    // 4. Create User Record (initially unverified email)
     const [newUser] = await db
       .insert(users)
       .values({
@@ -85,6 +87,7 @@ export class AuthService {
         passwordHash,
         role: "USER",
         isVerified,
+        isEmailVerified: false,
         isLocked: false,
         isDeleted: false,
       })
@@ -110,6 +113,14 @@ export class AuthService {
       })
       .returning();
 
+    // 6. Automatically generate & dispatch Email Verification OTP via Resend
+    let otpDispatchInfo = null;
+    try {
+      otpDispatchInfo = await OtpService.generateAndSendOtp(newUser.email, "EMAIL_VERIFICATION");
+    } catch (err: any) {
+      console.warn("[AuthService] Registration OTP dispatch warning:", err.message);
+    }
+
     const token = generateToken({ id: newUser.id, email: newUser.email, role: newUser.role });
 
     return {
@@ -119,9 +130,12 @@ export class AuthService {
         email: newUser.email,
         role: newUser.role,
         isVerified: newUser.isVerified,
+        isEmailVerified: newUser.isEmailVerified,
         isLocked: newUser.isLocked,
         profile: newProfile,
       },
+      message: "Registration successful! A 6-digit verification code has been dispatched to your email.",
+      otpInfo: otpDispatchInfo,
     };
   }
 
@@ -158,9 +172,152 @@ export class AuthService {
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,
+        isEmailVerified: user.isEmailVerified,
         isLocked: user.isLocked,
         profile,
       },
+    };
+  }
+
+  /**
+   * Verify User Email via OTP
+   */
+  static async verifyEmail(emailInput: string, otpInput: string) {
+    const email = emailInput.trim().toLowerCase();
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), eq(users.isDeleted, false)))
+      .limit(1);
+
+    if (!user) {
+      throw new ApiError(404, "User account not found");
+    }
+
+    if (user.isEmailVerified) {
+      return { message: "Email is already verified." };
+    }
+
+    // Verify OTP against hashed database record
+    await OtpService.verifyOtp(email, otpInput, "EMAIL_VERIFICATION");
+
+    // Update user record
+    await db
+      .update(users)
+      .set({ isEmailVerified: true, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    return { message: "Email successfully verified! You now have full access to dating features." };
+  }
+
+  /**
+   * Resend Verification or Password Reset OTP
+   */
+  static async resendOtp(emailInput: string, type: OtpEmailType = "EMAIL_VERIFICATION") {
+    const email = emailInput.trim().toLowerCase();
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), eq(users.isDeleted, false)))
+      .limit(1);
+
+    if (!user) {
+      throw new ApiError(404, "No account found with this email address");
+    }
+
+    if (type === "EMAIL_VERIFICATION" && user.isEmailVerified) {
+      throw new ApiError(400, "Your email is already verified.");
+    }
+
+    const result = await OtpService.generateAndSendOtp(email, type);
+    return result;
+  }
+
+  /**
+   * Forgot Password - Dispatches Password Reset OTP
+   */
+  static async forgotPassword(emailInput: string) {
+    const email = emailInput.trim().toLowerCase();
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), eq(users.isDeleted, false)))
+      .limit(1);
+
+    if (!user) {
+      // Security standard: do not leak existence of user, but inform code was dispatched if valid
+      return { message: "If an account exists with this email, a verification code has been dispatched." };
+    }
+
+    await OtpService.generateAndSendOtp(email, "PASSWORD_RESET");
+    return { message: "If an account exists with this email, a verification code has been dispatched." };
+  }
+
+  /**
+   * Reset Password with OTP Verification
+   */
+  static async resetPassword(emailInput: string, otpInput: string, newPasswordInput: string) {
+    const email = emailInput.trim().toLowerCase();
+
+    if (!newPasswordInput || newPasswordInput.length < 6) {
+      throw new ApiError(400, "New password must be at least 6 characters long");
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), eq(users.isDeleted, false)))
+      .limit(1);
+
+    if (!user) {
+      throw new ApiError(404, "User account not found");
+    }
+
+    // Verify OTP
+    await OtpService.verifyOtp(email, otpInput, "PASSWORD_RESET");
+
+    // Hash new password and update
+    const newPasswordHash = await hashPassword(newPasswordInput);
+    await db
+      .update(users)
+      .set({ passwordHash: newPasswordHash, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    return { message: "Password reset successfully. You may now log in with your new password." };
+  }
+
+  /**
+   * Current Authenticated User Profile & RBAC Info
+   */
+  static async getMe(userId: string) {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.isDeleted, false)))
+      .limit(1);
+
+    if (!user) {
+      throw new ApiError(404, "User account not found");
+    }
+
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, user.id))
+      .limit(1);
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+      isEmailVerified: user.isEmailVerified,
+      isLocked: user.isLocked,
+      profile,
+      createdAt: user.createdAt,
     };
   }
 
