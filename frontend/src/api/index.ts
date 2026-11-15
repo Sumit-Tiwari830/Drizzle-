@@ -36,7 +36,7 @@ export const discoveryApi = {
   },
 
   sendRequest: async (receiverId: string, note?: string) => {
-    const res = await apiClient.post("/requests", { receiverId, note });
+    const res = await apiClient.post("/requests/send", { receiverId, note });
     return res.data;
   },
 };
@@ -46,22 +46,22 @@ export const discoveryApi = {
 // ==========================================
 export const requestsApi = {
   getReceived: async (): Promise<ConnectRequest[]> => {
-    const res = await apiClient.get("/requests/received");
-    return res.data.data;
+    const res = await apiClient.get("/requests/my-requests");
+    return res.data.data?.received || [];
   },
 
   getSent: async (): Promise<ConnectRequest[]> => {
-    const res = await apiClient.get("/requests/sent");
-    return res.data.data;
+    const res = await apiClient.get("/requests/my-requests");
+    return res.data.data?.sent || [];
   },
 
   accept: async (requestId: string) => {
-    const res = await apiClient.post(`/requests/${requestId}/accept`);
+    const res = await apiClient.post(`/requests/${requestId}/respond`, { action: "ACCEPT" });
     return res.data;
   },
 
   reject: async (requestId: string) => {
-    const res = await apiClient.post(`/requests/${requestId}/reject`);
+    const res = await apiClient.post(`/requests/${requestId}/respond`, { action: "REJECT" });
     return res.data;
   },
 };
@@ -71,12 +71,12 @@ export const requestsApi = {
 // ==========================================
 export const matchApi = {
   getMyMatch: async (): Promise<ActiveMatch | null> => {
-    const res = await apiClient.get("/matches/current");
+    const res = await apiClient.get("/matches/my-match");
     return res.data.data;
   },
 
   requestReveal: async (matchId: string) => {
-    const res = await apiClient.post(`/matches/${matchId}/reveal`);
+    const res = await apiClient.post(`/matches/${matchId}/reveal-request`);
     return res.data;
   },
 
@@ -91,12 +91,12 @@ export const matchApi = {
 // ==========================================
 export const chatApi = {
   getMessages: async (matchId: string): Promise<ChatMessage[]> => {
-    const res = await apiClient.get(`/chat/${matchId}/messages`);
+    const res = await apiClient.get(`/chat/messages/${matchId}`);
     return res.data.data;
   },
 
   markAsRead: async (matchId: string) => {
-    const res = await apiClient.post(`/chat/${matchId}/read`);
+    const res = await apiClient.put(`/chat/messages/${matchId}/read`);
     return res.data;
   },
 };
@@ -106,31 +106,31 @@ export const chatApi = {
 // ==========================================
 export const profileApi = {
   getMyProfile: async (): Promise<Profile> => {
-    const res = await apiClient.get("/profile");
+    const res = await apiClient.get("/profiles/me");
     return res.data.data;
   },
 
   updateProfile: async (data: Partial<Profile>) => {
-    const res = await apiClient.put("/profile", data);
+    const res = await apiClient.put("/profiles/me", data);
     return res.data.data;
   },
 
   uploadAvatar: async (formData: FormData) => {
-    const res = await apiClient.post("/upload-avatar", formData, {
+    const res = await apiClient.post("/profiles/upload-avatar", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data.data;
   },
 
   uploadPhoto: async (formData: FormData) => {
-    const res = await apiClient.post("/upload-photo", formData, {
+    const res = await apiClient.post("/profiles/upload-photo", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data.data;
   },
 
   deletePhoto: async (photoUrl: string) => {
-    const res = await apiClient.delete("/photos", { data: { photoUrl } });
+    const res = await apiClient.delete("/profiles/photos", { data: { photoUrl } });
     return res.data;
   },
 };

@@ -97,10 +97,12 @@ export const OnboardingScreen = ({ navigation }: any) => {
         .map((i) => i.trim())
         .filter((i) => i.length > 0);
 
+      const cleanHeight = height.trim().endsWith("cm") ? height.trim() : `${height.trim()} cm`;
+
       await profileApi.updateProfile({
         username: username.trim(),
         dob: dob.trim(),
-        height: parseInt(height, 10) || 170,
+        height: cleanHeight,
         region: region.trim(),
         isRegionVisible,
         gender,

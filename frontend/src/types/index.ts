@@ -17,7 +17,7 @@ export interface Profile {
   lookingFor: string;
   dob?: string;
   age: number | null;
-  height: number | null; // in cm
+  height: string | number | null; // e.g., "178 cm" or 178
   region: string;
   isRegionVisible: boolean;
   interests: string[];
@@ -33,7 +33,7 @@ export interface CandidateFeedItem {
   gender: string;
   dob?: string;
   age: number | null;
-  height: number | null;
+  height: string | number | null;
   region: string; // May be "[HIDDEN - Private]" or the actual region
   isRegionVisible: boolean;
   bio: string;

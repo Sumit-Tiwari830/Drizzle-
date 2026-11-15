@@ -93,11 +93,15 @@ export class ProfileService {
   }
 
   /**
-   * Update general profile details
+   * Update or upsert general profile details
    */
   static async updateProfile(
     userId: string,
     data: {
+      username?: string;
+      actualName?: string;
+      gender?: string;
+      dob?: string;
       bio?: string;
       interests?: string[];
       city?: string;
@@ -108,8 +112,44 @@ export class ProfileService {
       interestedIn?: string;
       avatarUrl?: string;
       realPhotos?: string[];
+      isPublicReveal?: boolean;
     }
   ) {
+    const [existing] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
+
+    if (!existing) {
+      const [newProfile] = await db
+        .insert(profiles)
+        .values({
+          userId,
+          username: data.username || `user_${userId.slice(0, 8)}`,
+          actualName: data.actualName || data.username || "User",
+          gender: data.gender || "other",
+          dob: data.dob || "2000-01-01",
+          height: data.height || null,
+          region: data.region || null,
+          isRegionVisible: data.isRegionVisible ?? false,
+          bio: data.bio || null,
+          interests: data.interests || [],
+          lookingFor: data.lookingFor || "Long-term relationship",
+          interestedIn: data.interestedIn || "everyone",
+          city: data.city || null,
+          avatarUrl: data.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${userId}`,
+          realPhotos: data.realPhotos || [],
+          isPublicReveal: data.isPublicReveal ?? false,
+        })
+        .returning();
+
+      return {
+        ...newProfile,
+        age: calculateAge(newProfile.dob),
+      };
+    }
+
     const [updatedProfile] = await db
       .update(profiles)
       .set({

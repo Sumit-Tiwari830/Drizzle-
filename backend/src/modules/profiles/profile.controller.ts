@@ -73,9 +73,11 @@ export class ProfileController {
   static async updateProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { bio, interests, city, height, region, isRegionVisible, lookingFor, interestedIn, avatarUrl, realPhotos } = req.body;
-
-      const updated = await ProfileService.updateProfile(userId, {
+      const {
+        username,
+        actualName,
+        gender,
+        dob,
         bio,
         interests,
         city,
@@ -86,6 +88,25 @@ export class ProfileController {
         interestedIn,
         avatarUrl,
         realPhotos,
+        isPublicReveal,
+      } = req.body;
+
+      const updated = await ProfileService.updateProfile(userId, {
+        username,
+        actualName,
+        gender,
+        dob,
+        bio,
+        interests,
+        city,
+        height,
+        region,
+        isRegionVisible,
+        lookingFor,
+        interestedIn,
+        avatarUrl,
+        realPhotos,
+        isPublicReveal,
       });
 
       return sendResponse(res, 200, true, "Profile updated successfully", updated);
