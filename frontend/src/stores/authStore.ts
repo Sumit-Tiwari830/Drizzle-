@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
+import { storage } from "../utils/storage";
 import { User, Profile } from "../types";
 import { authApi, profileApi } from "../api";
 
@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
 
   login: async (token: string, user: User) => {
-    await SecureStore.setItemAsync("accessToken", token);
+    await storage.setItemAsync("accessToken", token);
     set({ accessToken: token, user, isAuthenticated: true });
     // Fetch user profile immediately
     try {
@@ -37,14 +37,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync("accessToken");
+    await storage.deleteItemAsync("accessToken");
     set({ user: null, profile: null, accessToken: null, isAuthenticated: false });
   },
 
   checkSession: async () => {
     try {
       set({ isLoading: true });
-      const token = await SecureStore.getItemAsync("accessToken");
+      const token = await storage.getItemAsync("accessToken");
       if (token) {
         set({ accessToken: token, isAuthenticated: true });
         const profile = await profileApi.getMyProfile();
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (err) {
       console.warn("Session check error / unauthenticated:", err);
-      await SecureStore.deleteItemAsync("accessToken");
+      await storage.deleteItemAsync("accessToken");
       set({ user: null, profile: null, accessToken: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });

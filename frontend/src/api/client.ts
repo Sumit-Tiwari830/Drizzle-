@@ -1,6 +1,6 @@
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { storage } from "../utils/storage";
 
 // In development:
 // Android Emulator uses 10.0.2.2 to access host machine
@@ -27,7 +27,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken");
+      const token = await storage.getItemAsync("accessToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -48,7 +48,7 @@ apiClient.interceptors.response.use(
 
     if (status === 401) {
       // Token expired or invalid -> Clear local token
-      await SecureStore.deleteItemAsync("accessToken");
+      await storage.deleteItemAsync("accessToken");
     }
 
     // Enhance error with clean backend message
