@@ -1,51 +1,177 @@
-# ==========================================
-# Dependencies
-# ==========================================
+# ==============================================================================
+# PRODUCTION .GITIGNORE - COMPREHENSIVE REPOSITORY ROOT
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
 node_modules/
 **/node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
-# ==========================================
-# Environment Variables & Secrets
-# ==========================================
+# ------------------------------------------------------------------------------
+# 2. Environment Variables, Secrets & Private Credentials
+# ------------------------------------------------------------------------------
 .env
 .env.*
-!.env.example
+*.env
 **/.env
 **/.env.*
+**/*.env
+!.env.example
 !**/.env.example
+!**/.env.test.example
 
-# ==========================================
-# Build & Distribution Artifacts
-# ==========================================
+# Local & Personal overrides
+*.local
+**/*.local
+
+# Private keys, certificates & credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.cer
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Service accounts & Cloud credentials
+secrets/
+**/secrets/
+credentials.json
+**/credentials.json
+serviceAccountKey*.json
+**/serviceAccountKey*.json
+firebase-adminsdk*.json
+**/firebase-adminsdk*.json
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+
+# ------------------------------------------------------------------------------
+# 3. Build & Compilation Outputs
+# ------------------------------------------------------------------------------
 dist/
 **/dist/
 build/
 **/build/
+out/
+**/out/
 *.tsbuildinfo
+**/*.tsbuildinfo
+.turbo/
+**/ .turbo/
 
-# ==========================================
-# Logs
-# ==========================================
+# ------------------------------------------------------------------------------
+# 4. Logs & Debugging Outputs
+# ------------------------------------------------------------------------------
 logs/
+**/logs/
 *.log
+**/*.log
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# ==========================================
-# File Uploads & Temp Storage
-# ==========================================
+# ------------------------------------------------------------------------------
+# 5. Runtime Storage, File Uploads & Temporary Directories
+# ------------------------------------------------------------------------------
 uploads/
 **/uploads/
 temp/
 **/temp/
 tmp/
 **/tmp/
+*.tmp
+*.temp
+**/*.tmp
+**/*.temp
+.cache/
+**/.cache/
+.parcel-cache/
 
-# ==========================================
-# OS & Editor Files
-# ==========================================
+# ------------------------------------------------------------------------------
+# 6. Database Artifacts, Local SQLite & Drizzle Cache
+# ------------------------------------------------------------------------------
+.drizzle/
+**/.drizzle/
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db
+*.db-journal
+*.dump
+*.sql.gz
+
+# ------------------------------------------------------------------------------
+# 7. Testing & Code Coverage Reports
+# ------------------------------------------------------------------------------
+coverage/
+**/coverage/
+.nyc_output/
+*.lcov
+test-results/
+**/test-results/
+playwright-report/
+
+# ------------------------------------------------------------------------------
+# 8. Operating System Artifacts
+# ------------------------------------------------------------------------------
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
 Thumbs.db
+[Tt]humbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ------------------------------------------------------------------------------
+# 9. IDEs & Text Editors
+# ------------------------------------------------------------------------------
+# JetBrains / IntelliJ / WebStorm
 .idea/
-.vscode/
+**/.idea/
+*.iws
+*.iml
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim / Nano / Backup files
 *.swp
+*.swo
+.*.sw[a-p]
+*.bak
+*.orig
