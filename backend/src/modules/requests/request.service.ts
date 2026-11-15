@@ -2,8 +2,12 @@ import { db } from "../../db/index.js";
 import { requests, users, profiles, matches } from "../../db/schema/index.js";
 import { eq, and, or, sql, gte, desc } from "drizzle-orm";
 import { ApiError } from "../../utils/apiError.js";
+import { calculateAge } from "../../utils/date.js";
 
 export class RequestService {
+  public static readonly REQUEST_TTL_HOURS = 48; // 2 days
+  public static readonly REQUEST_TTL_MS = 48 * 60 * 60 * 1000; // 2 days in milliseconds
+
   /**
    * Helper: Check if two users have previously matched and unmatched
    */
@@ -97,7 +101,16 @@ export class RequestService {
       .limit(1);
 
     if (existingRequest) {
-      throw new ApiError(409, "A pending request already exists between you and this user");
+      const isExpired = Date.now() - new Date(existingRequest.createdAt).getTime() >= RequestService.REQUEST_TTL_MS;
+      if (isExpired) {
+        // Auto-expire old request (2-day TTL passed), allowing a fresh request to be dispatched
+        await db
+          .update(requests)
+          .set({ status: "EXPIRED", respondedAt: new Date() })
+          .where(eq(requests.id, existingRequest.id));
+      } else {
+        throw new ApiError(409, "A pending request already exists between you and this user");
+      }
     }
 
     // 5. Check if they previously matched and unmatched
@@ -136,14 +149,49 @@ export class RequestService {
    * 3. CANCELS other pending requests for both users.
    */
   static async respondToRequest(requestId: string, receiverId: string, action: "ACCEPT" | "REJECT") {
+    // 1. Fetch request without hardcoding status: PENDING so we can return informative status messages
     const [reqRecord] = await db
       .select()
       .from(requests)
-      .where(and(eq(requests.id, requestId), eq(requests.receiverId, receiverId), eq(requests.status, "PENDING")))
+      .where(and(eq(requests.id, requestId), eq(requests.receiverId, receiverId)))
       .limit(1);
 
     if (!reqRecord) {
-      throw new ApiError(404, "Pending request not found");
+      throw new ApiError(404, "Connect request not found");
+    }
+
+    // 2. Clear, informative state handling for User B
+    if (reqRecord.status === "CANCELLED") {
+      throw new ApiError(
+        410,
+        "This request is no longer available because the user has already entered an active match with someone else."
+      );
+    }
+
+    const isExpired =
+      reqRecord.status === "EXPIRED" ||
+      (reqRecord.status === "PENDING" &&
+        Date.now() - new Date(reqRecord.createdAt).getTime() >= RequestService.REQUEST_TTL_MS);
+
+    if (isExpired) {
+      if (reqRecord.status === "PENDING") {
+        await db
+          .update(requests)
+          .set({ status: "EXPIRED", respondedAt: new Date() })
+          .where(eq(requests.id, requestId));
+      }
+      throw new ApiError(
+        410,
+        "This request has expired. Connect requests are only valid for 48 hours (2 days)."
+      );
+    }
+
+    if (reqRecord.status === "ACCEPTED") {
+      throw new ApiError(400, "This request has already been accepted.");
+    }
+
+    if (reqRecord.status === "REJECTED") {
+      throw new ApiError(400, "This request has already been rejected.");
     }
 
     const senderId = reqRecord.senderId;
@@ -238,6 +286,14 @@ export class RequestService {
    * Get user's incoming and outgoing requests (with ex-match warnings)
    */
   static async getMyRequests(userId: string) {
+    const fortyEightHoursAgo = new Date(Date.now() - RequestService.REQUEST_TTL_MS);
+
+    // 0. Automatically expire stale pending requests older than 48 hours (2-day TTL)
+    await db
+      .update(requests)
+      .set({ status: "EXPIRED", respondedAt: new Date() })
+      .where(and(eq(requests.status, "PENDING"), sql`${requests.createdAt} < ${fortyEightHoursAgo}`));
+
     // 1. Fetch all past UNMATCHED records involving userId
     const pastUnmatches = await db
       .select({
@@ -262,7 +318,7 @@ export class RequestService {
       }
     }
 
-    // 2. Fetch incoming requests
+    // 2. Fetch incoming requests (Active within 48h TTL)
     const incomingRaw = await db
       .select({
         id: requests.id,
@@ -270,18 +326,32 @@ export class RequestService {
         username: profiles.username,
         avatarUrl: profiles.avatarUrl,
         dob: profiles.dob,
+        height: profiles.height,
+        region: profiles.region,
+        isRegionVisible: profiles.isRegionVisible,
         gender: profiles.gender,
         city: profiles.city,
         createdAt: requests.createdAt,
       })
       .from(requests)
       .innerJoin(profiles, eq(requests.senderId, profiles.userId))
-      .where(and(eq(requests.receiverId, userId), eq(requests.status, "PENDING")));
+      .where(
+        and(
+          eq(requests.receiverId, userId),
+          eq(requests.status, "PENDING"),
+          gte(requests.createdAt, fortyEightHoursAgo)
+        )
+      );
 
     const incoming = incomingRaw.map((req) => {
       const previouslyUnmatched = unmatchHistoryMap.has(req.senderId);
+      const expiresAt = new Date(new Date(req.createdAt).getTime() + RequestService.REQUEST_TTL_MS);
+
       return {
         ...req,
+        age: calculateAge(req.dob), // Always visible
+        region: req.isRegionVisible ? req.region : "[HIDDEN - Private]", // Visible when user wants
+        expiresAt,
         previouslyUnmatched,
         lastUnmatchedAt: unmatchHistoryMap.get(req.senderId) ?? null,
         warning: previouslyUnmatched
@@ -290,7 +360,7 @@ export class RequestService {
       };
     });
 
-    // 3. Fetch outgoing requests
+    // 3. Fetch outgoing requests (Active within 48h TTL)
     const outgoingRaw = await db
       .select({
         id: requests.id,
@@ -298,18 +368,32 @@ export class RequestService {
         username: profiles.username,
         avatarUrl: profiles.avatarUrl,
         dob: profiles.dob,
+        height: profiles.height,
+        region: profiles.region,
+        isRegionVisible: profiles.isRegionVisible,
         gender: profiles.gender,
         city: profiles.city,
         createdAt: requests.createdAt,
       })
       .from(requests)
       .innerJoin(profiles, eq(requests.receiverId, profiles.userId))
-      .where(and(eq(requests.senderId, userId), eq(requests.status, "PENDING")));
+      .where(
+        and(
+          eq(requests.senderId, userId),
+          eq(requests.status, "PENDING"),
+          gte(requests.createdAt, fortyEightHoursAgo)
+        )
+      );
 
     const outgoing = outgoingRaw.map((req) => {
       const previouslyUnmatched = unmatchHistoryMap.has(req.receiverId);
+      const expiresAt = new Date(new Date(req.createdAt).getTime() + RequestService.REQUEST_TTL_MS);
+
       return {
         ...req,
+        age: calculateAge(req.dob), // Always visible
+        region: req.isRegionVisible ? req.region : "[HIDDEN - Private]", // Visible when user wants
+        expiresAt,
         previouslyUnmatched,
         lastUnmatchedAt: unmatchHistoryMap.get(req.receiverId) ?? null,
         warning: previouslyUnmatched

@@ -1,7 +1,11 @@
 import multer from "multer";
+import { ApiError } from "../utils/apiError.js";
 
 const storage = multer.memoryStorage();
 
+/**
+ * Middleware for Admin Master Directory Excel Uploads
+ */
 export const uploadExcel = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
@@ -15,7 +19,23 @@ export const uploadExcel = multer({
     ) {
       cb(null, true);
     } else {
-      cb(new Error("Only Excel files (.xlsx, .xls, .csv) are allowed"));
+      cb(new ApiError(400, "Only Excel files (.xlsx, .xls, .csv) are allowed"));
+    }
+  },
+});
+
+/**
+ * Middleware for User Profile Photos & Avatar Uploads (Cloudinary Pipeline)
+ */
+export const uploadImage = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max per photo
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
+      cb(null, true);
+    } else {
+      cb(new ApiError(400, "Invalid image format. Only JPEG, PNG, and WebP are allowed."));
     }
   },
 });

@@ -7,7 +7,8 @@ export class MatchController {
   static async getMyMatch(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const match = await MatchService.getMyMatch(userId);
+      const io = req.app.get("io");
+      const match = await MatchService.getMyMatch(userId, io);
       return sendResponse(res, 200, true, match ? "Active match retrieved" : "No active match", match);
     } catch (error) {
       next(error);

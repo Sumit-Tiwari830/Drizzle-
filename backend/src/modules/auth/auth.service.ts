@@ -8,6 +8,7 @@ import { Message } from "../../db/msg_schema.js";
 import { NotificationService } from "../notifications/notification.service.js";
 import { OtpService } from "../../services/otp.service.js";
 import { OtpEmailType } from "../../services/email.service.js";
+import { calculateAge } from "../../utils/date.js";
 
 interface RegisterInput {
   email: string;
@@ -16,6 +17,9 @@ interface RegisterInput {
   actualName?: string; // Optional if verified via master directory; required if unverified
   gender?: string; // Optional if verified via master directory; required if unverified
   dob: string; // YYYY-MM-DD
+  height?: string; // Always visible (e.g., "175 cm", "5'10\"")
+  region?: string; // Cultural / geographical region
+  isRegionVisible?: boolean; // User preference to show/hide region
   bio?: string;
   interests?: string[];
   city?: string;
@@ -102,6 +106,9 @@ export class AuthService {
         actualName,
         gender,
         dob: input.dob,
+        height: input.height || null,
+        region: input.region || null,
+        isRegionVisible: input.isRegionVisible || false,
         bio: input.bio || null,
         interests: input.interests || [],
         lookingFor: input.lookingFor || "Long-term relationship",
@@ -132,7 +139,10 @@ export class AuthService {
         isVerified: newUser.isVerified,
         isEmailVerified: newUser.isEmailVerified,
         isLocked: newUser.isLocked,
-        profile: newProfile,
+        profile: {
+          ...newProfile,
+          age: calculateAge(newProfile.dob),
+        },
       },
       message: "Registration successful! A 6-digit verification code has been dispatched to your email.",
       otpInfo: otpDispatchInfo,
@@ -174,7 +184,12 @@ export class AuthService {
         isVerified: user.isVerified,
         isEmailVerified: user.isEmailVerified,
         isLocked: user.isLocked,
-        profile,
+        profile: profile
+          ? {
+              ...profile,
+              age: calculateAge(profile.dob),
+            }
+          : null,
       },
     };
   }
@@ -316,7 +331,12 @@ export class AuthService {
       isVerified: user.isVerified,
       isEmailVerified: user.isEmailVerified,
       isLocked: user.isLocked,
-      profile,
+      profile: profile
+        ? {
+            ...profile,
+            age: calculateAge(profile.dob),
+          }
+        : null,
       createdAt: user.createdAt,
     };
   }

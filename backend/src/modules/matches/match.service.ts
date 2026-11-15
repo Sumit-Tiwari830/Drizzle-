@@ -5,16 +5,73 @@ import { ApiError } from "../../utils/apiError.js";
 import { Message } from "../../db/msg_schema.js";
 import { NotificationService } from "../notifications/notification.service.js";
 import { Server } from "socket.io";
+import { calculateAge } from "../../utils/date.js";
 
 export class MatchService {
+  public static readonly ICEBREAKER_HOURS = 48; // 48-hour first message window
+  public static readonly ICEBREAKER_MS = 48 * 60 * 60 * 1000;
+
+  /**
+   * Auto-expire a ghost match where 48 hours passed without any message
+   * Unlocks both candidates and sends automated notifications
+   */
+  static async autoExpireGhostMatch(matchId: string, user1Id: string, user2Id: string, io?: Server) {
+    await db.transaction(async (tx) => {
+      // 1. Mark match UNMATCHED
+      await tx
+        .update(matches)
+        .set({
+          status: "UNMATCHED",
+          unmatchedAt: new Date(),
+          unmatchedBy: null, // System automated expiry
+        })
+        .where(eq(matches.id, matchId));
+
+      // 2. Unlock both candidates
+      await tx
+        .update(users)
+        .set({ isLocked: false })
+        .where(or(eq(users.id, user1Id), eq(users.id, user2Id)));
+    });
+
+    // 3. Purge MongoDB messages (if any)
+    await Message.deleteMany({ matchId });
+
+    // 4. Send automated in-app & push notification to both users
+    const expiryTitle = "Match Expired (48-Hour Inactivity)";
+    const expiryMsg = "Your match has automatically expired because no messages were sent within 48 hours. You are now unlocked to discover new profiles!";
+
+    await NotificationService.createNotification(
+      user1Id,
+      "UNMATCHED",
+      expiryTitle,
+      expiryMsg,
+      { matchId, reason: "ICEBREAKER_48H_EXPIRED" },
+      io
+    );
+
+    await NotificationService.createNotification(
+      user2Id,
+      "UNMATCHED",
+      expiryTitle,
+      expiryMsg,
+      { matchId, reason: "ICEBREAKER_48H_EXPIRED" },
+      io
+    );
+
+    // 5. Broadcast socket event to room
+    if (io) {
+      io.to(`match_${matchId}`).emit("match_ended", { matchId, reason: "ICEBREAKER_48H_EXPIRED" });
+    }
+  }
+
   /**
    * Get Current Active Match
-   * Includes mutual profile reveal checking:
-   * Real name and real photos are ONLY shown if:
-   * 1. Partner has enabled public profile reveal (isPublicReveal = true), OR
-   * 2. Both candidates accepted the profile reveal condition (user1RevealAccepted && user2RevealAccepted).
+   * Includes 48-Hour Icebreaker Ghosting Check:
+   * If 48 hours have passed since matching and 0 messages have been sent,
+   * the match is automatically dissolved and both users unlocked.
    */
-  static async getMyMatch(userId: string) {
+  static async getMyMatch(userId: string, io?: Server) {
     const [match] = await db
       .select()
       .from(matches)
@@ -28,6 +85,18 @@ export class MatchService {
 
     if (!match) {
       return null;
+    }
+
+    // 48-Hour First-Message Icebreaker Check
+    const now = new Date();
+    const matchedAt = new Date(match.matchedAt);
+    const icebreakerDeadline = new Date(matchedAt.getTime() + MatchService.ICEBREAKER_MS);
+    const messageCount = await Message.countDocuments({ matchId: match.id });
+
+    if (now.getTime() >= icebreakerDeadline.getTime() && messageCount === 0) {
+      // 48-Hour Icebreaker expired with 0 messages: Break Deadlock!
+      await this.autoExpireGhostMatch(match.id, match.user1Id, match.user2Id, io);
+      return null; // Both candidates are now unlocked!
     }
 
     const partnerId = match.user1Id === userId ? match.user2Id : match.user1Id;
@@ -53,6 +122,10 @@ export class MatchService {
       avatarUrl: partnerProfile.avatarUrl,
       gender: partnerProfile.gender,
       dob: partnerProfile.dob,
+      age: calculateAge(partnerProfile.dob), // Always visible
+      height: partnerProfile.height, // Always visible
+      region: partnerProfile.isRegionVisible || isRevealed ? partnerProfile.region : "[HIDDEN - Private]", // Visible when user wants
+      isRegionVisible: partnerProfile.isRegionVisible,
       bio: partnerProfile.bio,
       interests: partnerProfile.interests,
       lookingFor: partnerProfile.lookingFor,
@@ -66,9 +139,18 @@ export class MatchService {
     const myRevealAccepted = isUser1 ? match.user1RevealAccepted : match.user2RevealAccepted;
     const partnerRevealAccepted = isUser1 ? match.user2RevealAccepted : match.user1RevealAccepted;
 
+    const icebreakerRemainingHours = Math.max(
+      0,
+      Math.round((icebreakerDeadline.getTime() - now.getTime()) / (60 * 60 * 1000))
+    );
+
     return {
       matchId: match.id,
       matchedAt: match.matchedAt,
+      icebreakerDeadline,
+      icebreakerRemainingHours,
+      messagesExchangedCount: messageCount,
+      hasStartedChat: messageCount > 0,
       myRevealAccepted,
       partnerRevealAccepted,
       isMutuallyRevealed,

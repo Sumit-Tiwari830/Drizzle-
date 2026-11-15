@@ -5,6 +5,8 @@ export interface IMessage extends Document {
   senderId: string;
   receiverId: string;
   message: string;
+  isRead: boolean;
+  readAt?: Date | null;
   createdAt: Date;
 }
 
@@ -29,6 +31,15 @@ const MessageSchema: Schema = new Schema({
     required: true,
     trim: true,
     maxlength: 2000,
+  },
+  isRead: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  readAt: {
+    type: Date,
+    default: null,
   },
   createdAt: {
     type: Date,

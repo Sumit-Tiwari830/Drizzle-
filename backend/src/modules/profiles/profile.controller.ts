@@ -50,15 +50,38 @@ export class ProfileController {
     }
   }
 
+  static async toggleRegionVisibility(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const { isRegionVisible } = req.body;
+
+      if (typeof isRegionVisible !== "boolean") {
+        throw new ApiError(400, "isRegionVisible must be a boolean");
+      }
+
+      const updated = await ProfileService.toggleRegionVisibility(userId, isRegionVisible);
+      const message = isRegionVisible
+        ? "Region visibility enabled. Your region is now visible on your profile."
+        : "Region visibility disabled. Your region is now hidden from public view.";
+
+      return sendResponse(res, 200, true, message, updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async updateProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { bio, interests, city, lookingFor, interestedIn, avatarUrl, realPhotos } = req.body;
+      const { bio, interests, city, height, region, isRegionVisible, lookingFor, interestedIn, avatarUrl, realPhotos } = req.body;
 
       const updated = await ProfileService.updateProfile(userId, {
         bio,
         interests,
         city,
+        height,
+        region,
+        isRegionVisible,
         lookingFor,
         interestedIn,
         avatarUrl,
@@ -66,6 +89,54 @@ export class ProfileController {
       });
 
       return sendResponse(res, 200, true, "Profile updated successfully", updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async uploadAvatar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const file = req.file;
+
+      if (!file) {
+        throw new ApiError(400, "Please provide an image file with field name 'avatar'");
+      }
+
+      const result = await ProfileService.uploadAvatar(userId, file.buffer);
+      return sendResponse(res, 200, true, "Avatar uploaded successfully to Cloudinary", result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async uploadPhoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const file = req.file;
+
+      if (!file) {
+        throw new ApiError(400, "Please provide an image file with field name 'photo'");
+      }
+
+      const result = await ProfileService.uploadPhoto(userId, file.buffer);
+      return sendResponse(res, 200, true, "Photo uploaded successfully to Cloudinary", result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deletePhoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const { photoUrl } = req.body;
+
+      if (!photoUrl) {
+        throw new ApiError(400, "photoUrl is required to delete a photo");
+      }
+
+      const result = await ProfileService.deletePhoto(userId, photoUrl);
+      return sendResponse(res, 200, true, result.message, result);
     } catch (error) {
       next(error);
     }

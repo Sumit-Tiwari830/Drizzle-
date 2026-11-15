@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx tests/unit/auth_otp.test.ts && tsx tests/unit/auth.test.ts && tsx tests/unit/edge_cases.test.ts && tsx tests/unit/privacy.test.ts && tsx tests/unit/quota.test.ts",
+    "test": "tsx tests/unit/icebreaker_and_push.test.ts && tsx tests/unit/cloudinary_and_verification.test.ts && tsx tests/unit/chat_receipts_ttl.test.ts && tsx tests/unit/profile_attributes.test.ts && tsx tests/unit/auth_otp.test.ts && tsx tests/unit/auth.test.ts && tsx tests/unit/edge_cases.test.ts && tsx tests/unit/privacy.test.ts && tsx tests/unit/quota.test.ts",
     "test:simulation": "tsx tests/load/simulation_2000_users.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.3",

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { NotificationService } from "./notification.service.js";
 import { sendResponse } from "../../utils/apiResponse.js";
+import { PushService } from "../../services/push.service.js";
 import { ApiError } from "../../utils/apiError.js";
 
 export class NotificationController {
@@ -55,6 +56,38 @@ export class NotificationController {
       const id = req.params.id as string;
 
       const result = await NotificationService.deleteNotification(id, userId);
+      return sendResponse(res, 200, true, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async registerDeviceToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const { token, platform } = req.body;
+
+      if (!token) {
+        throw new ApiError(400, "Device push token is required");
+      }
+
+      const device = await PushService.registerDevice(userId, token, platform || "android");
+      return sendResponse(res, 200, true, "Device push token registered successfully", device);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async removeDeviceToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const { token } = req.body;
+
+      if (!token) {
+        throw new ApiError(400, "Device push token is required");
+      }
+
+      const result = await PushService.removeDevice(userId, token);
       return sendResponse(res, 200, true, result.message);
     } catch (error) {
       next(error);

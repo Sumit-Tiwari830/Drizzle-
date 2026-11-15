@@ -3,6 +3,7 @@ import { Message } from "../db/msg_schema.js";
 import { db } from "../db/index.js";
 import { matches } from "../db/schema/index.js";
 import { eq, and, or } from "drizzle-orm";
+import { PushService } from "../services/push.service.js";
 
 export const setupSockets = (io: Server) => {
   io.on("connection", (socket: Socket) => {
@@ -52,7 +53,7 @@ export const setupSockets = (io: Server) => {
       }
     });
 
-    // Real-time Chat Messaging with Match Verification
+    // 1. Real-time Chat Messaging with Match Verification
     socket.on(
       "chat_message",
       async (data: { matchId: string; senderId: string; message: string }) => {
@@ -86,22 +87,78 @@ export const setupSockets = (io: Server) => {
 
           const receiverId = match.user1Id === senderId ? match.user2Id : match.user1Id;
 
-          // 2. Persist to MongoDB (with 30-day auto TTL)
+          // 2. Persist to MongoDB (with 30-day auto TTL & Read receipt flags)
           const savedMessage = await Message.create({
             matchId,
             senderId,
             receiverId,
             message: message.trim(),
+            isRead: false,
+            readAt: null,
           });
 
           // 3. Broadcast to the private match room
           io.to(`match_${matchId}`).emit("chat_message", savedMessage);
+
+          // 4. Mobile push notification to receiver
+          PushService.sendPushNotification(receiverId, {
+            title: "New Message",
+            body: message.trim().length > 60 ? `${message.trim().substring(0, 57)}...` : message.trim(),
+            data: { matchId, type: "CHAT_MESSAGE", senderId },
+          }).catch(() => {});
         } catch (error) {
           console.error("❌ Error handling socket chat_message:", error);
           socket.emit("error", { message: "Failed to process chat message" });
         }
       }
     );
+
+    // 2. Real-time Typing Indicators
+    socket.on("typing_start", (data: { matchId: string; userId: string }) => {
+      if (data?.matchId && data?.userId) {
+        // Broadcast to other participant in the match room
+        socket.to(`match_${data.matchId}`).emit("partner_typing", {
+          matchId: data.matchId,
+          userId: data.userId,
+          isTyping: true,
+        });
+      }
+    });
+
+    socket.on("typing_stop", (data: { matchId: string; userId: string }) => {
+      if (data?.matchId && data?.userId) {
+        socket.to(`match_${data.matchId}`).emit("partner_typing", {
+          matchId: data.matchId,
+          userId: data.userId,
+          isTyping: false,
+        });
+      }
+    });
+
+    // 3. Real-time Read Receipts
+    socket.on("mark_read", async (data: { matchId: string; userId: string }) => {
+      try {
+        const { matchId, userId } = data;
+        if (!matchId || !userId) return;
+
+        const readAt = new Date();
+        const updateResult = await Message.updateMany(
+          { matchId, receiverId: userId, isRead: false },
+          { $set: { isRead: true, readAt } }
+        );
+
+        if (updateResult.modifiedCount > 0) {
+          io.to(`match_${matchId}`).emit("messages_read", {
+            matchId,
+            readerId: userId,
+            readAt,
+            count: updateResult.modifiedCount,
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error processing socket mark_read:", error);
+      }
+    });
 
     socket.on("disconnect", () => {
       console.log(`🔴 Socket disconnected: ${socket.id}`);

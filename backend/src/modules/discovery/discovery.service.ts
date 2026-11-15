@@ -1,6 +1,8 @@
 import { db } from "../../db/index.js";
 import { users, profiles, requests, matches } from "../../db/schema/index.js";
 import { eq, and, notInArray, sql } from "drizzle-orm";
+import { calculateAge } from "../../utils/date.js";
+import { MatchService } from "../matches/match.service.js";
 
 export class DiscoveryService {
   /**
@@ -15,6 +17,9 @@ export class DiscoveryService {
   static async getFeed(currentUserId: string, page: number = 1, limit: number = 20) {
     const offset = Math.max(0, (page - 1) * limit);
 
+    // 0. Auto-break ghosting deadlock: If current user is stuck in a 48h inactive match, unlock them
+    await MatchService.getMyMatch(currentUserId);
+
     // 1. Fetch current user profile to check preferences
     const [myProfile] = await db
       .select()
@@ -22,7 +27,8 @@ export class DiscoveryService {
       .where(eq(profiles.userId, currentUserId))
       .limit(1);
 
-    // 2. Find all userIds with whom current user already has an active pending request
+    // 2. Find all userIds with whom current user already has an active pending request (within 48-hour TTL)
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
     const existingRequests = await db
       .select({
         senderId: requests.senderId,
@@ -32,6 +38,7 @@ export class DiscoveryService {
       .where(
         and(
           eq(requests.status, "PENDING"),
+          sql`${requests.createdAt} >= ${fortyEightHoursAgo}`,
           sql`(${requests.senderId} = ${currentUserId} OR ${requests.receiverId} = ${currentUserId})`
         )
       );
@@ -86,6 +93,9 @@ export class DiscoveryService {
         actualName: profiles.actualName,
         gender: profiles.gender,
         dob: profiles.dob,
+        height: profiles.height,
+        region: profiles.region,
+        isRegionVisible: profiles.isRegionVisible,
         bio: profiles.bio,
         interests: profiles.interests,
         lookingFor: profiles.lookingFor,
@@ -113,6 +123,10 @@ export class DiscoveryService {
         avatarUrl: candidate.avatarUrl,
         gender: candidate.gender,
         dob: candidate.dob,
+        age: calculateAge(candidate.dob), // Always visible (dynamically derived from dob)
+        height: candidate.height, // Always visible
+        region: candidate.isRegionVisible ? candidate.region : "[HIDDEN - Private]", // Visible when user wants to
+        isRegionVisible: candidate.isRegionVisible,
         bio: candidate.bio,
         interests: candidate.interests,
         lookingFor: candidate.lookingFor,

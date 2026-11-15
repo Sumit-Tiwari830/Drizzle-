@@ -16,6 +16,9 @@ export const profiles = pgTable("profiles", {
   actualName: varchar("actual_name", { length: 150 }).notNull(),
   gender: varchar("gender", { length: 20 }).notNull(),
   dob: date("dob").notNull(),
+  height: varchar("height", { length: 50 }), // Always visible in profile (e.g., "175 cm", "5'10\"")
+  region: varchar("region", { length: 100 }), // Visible only when user wants (isRegionVisible = true)
+  isRegionVisible: boolean("is_region_visible").default(false).notNull(), // User preference to show/hide region
   bio: text("bio"),
   interests: jsonb("interests").$type<string[]>().default([]).notNull(),
   lookingFor: varchar("looking_for", { length: 50 }).default("Long-term relationship"),

@@ -1,11 +1,12 @@
 import { Server } from "socket.io";
 import { Notification, INotification } from "../../db/notification_schema.js";
 import { ApiError } from "../../utils/apiError.js";
+import { PushService } from "../../services/push.service.js";
 
 export class NotificationService {
   /**
    * Create and deliver a notification
-   * Saves to MongoDB and broadcasts real-time via Socket.IO if user is connected
+   * Saves to MongoDB, broadcasts real-time via Socket.IO, and dispatches Mobile Push Notification
    */
   static async createNotification(
     userId: string,
@@ -24,10 +25,17 @@ export class NotificationService {
       isRead: false,
     });
 
-    // Real-time delivery to user's socket room
+    // 1. Real-time delivery to user's socket room if connected
     if (io) {
       io.to(`user_${userId}`).emit("new_notification", notification);
     }
+
+    // 2. Mobile/Web Push Notification dispatch
+    PushService.sendPushNotification(userId, {
+      title,
+      body: message,
+      data: { ...metadata, type, notificationId: notification._id?.toString() },
+    }).catch((err) => console.warn("[NotificationService] Push dispatch notice:", err));
 
     return notification;
   }

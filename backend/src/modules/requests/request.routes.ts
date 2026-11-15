@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { RequestController } from "./request.controller.js";
-import { authenticate } from "../../middlewares/auth.middleware.js";
+import { authenticate, requireEmailVerified } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(authenticate);
+// Connecting & responding requires email verification via OTP
+router.use(authenticate, requireEmailVerified);
 
 router.post("/send", RequestController.sendRequest);
 router.post("/:id/respond", RequestController.respondToRequest);

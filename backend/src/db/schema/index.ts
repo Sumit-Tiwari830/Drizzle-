@@ -5,6 +5,7 @@ import { profiles } from "./profiles";
 import { requests } from "./requests";
 import { matches } from "./matches";
 import { otps } from "./otps";
+import { userDevices } from "./devices";
 
 export { masterDirectory } from "./masterDirectory";
 export { users } from "./users";
@@ -12,6 +13,7 @@ export { profiles } from "./profiles";
 export { requests } from "./requests";
 export { matches } from "./matches";
 export { otps } from "./otps";
+export { userDevices } from "./devices";
 
 export type { MasterDirectoryRecord, NewMasterDirectoryRecord } from "./masterDirectory";
 export type { User, NewUser } from "./users";
@@ -19,6 +21,7 @@ export type { Profile, NewProfile } from "./profiles";
 export type { Request as RequestRecord, NewRequest as NewRequestRecord } from "./requests";
 export type { Match, NewMatch } from "./matches";
 export type { Otp, NewOtp } from "./otps";
+export type { UserDevice, NewUserDevice } from "./devices";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {

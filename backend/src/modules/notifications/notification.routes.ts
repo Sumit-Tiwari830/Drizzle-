@@ -13,4 +13,8 @@ router.put("/mark-all-read", NotificationController.markAllAsRead);
 router.put("/:id/read", NotificationController.markAsRead);
 router.delete("/:id", NotificationController.deleteNotification);
 
+// Push Notification Device Token Management
+router.post("/device-token", NotificationController.registerDeviceToken);
+router.delete("/device-token", NotificationController.removeDeviceToken);
+
 export default router;
