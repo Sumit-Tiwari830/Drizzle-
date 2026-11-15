@@ -1,6 +1,6 @@
 import { db } from "../../db/index.js";
-import { users, profiles, requests } from "../../db/schema/index.js";
-import { eq, and, ne, notInArray, sql } from "drizzle-orm";
+import { users, profiles, requests, matches } from "../../db/schema/index.js";
+import { eq, and, notInArray, sql } from "drizzle-orm";
 
 export class DiscoveryService {
   /**
@@ -10,6 +10,7 @@ export class DiscoveryService {
    * - Deleted users (isDeleted = true) are HIDDEN.
    * - Current user is excluded.
    * - Privacy: If candidate has isPublicReveal = false, actualName and realPhotos are hidden!
+   * - Ex-Match Warning: Warns user if they previously matched and unmatched with a candidate (even if username changed).
    */
   static async getFeed(currentUserId: string) {
     // 1. Fetch current user profile to check preferences
@@ -39,7 +40,31 @@ export class DiscoveryService {
       excludedUserIds.add(req.receiverId);
     }
 
-    // 3. Query available candidate users
+    // 3. Find all past UNMATCHED records involving currentUserId to warn about ex-matches
+    const pastUnmatches = await db
+      .select({
+        user1Id: matches.user1Id,
+        user2Id: matches.user2Id,
+        unmatchedAt: matches.unmatchedAt,
+      })
+      .from(matches)
+      .where(
+        and(
+          eq(matches.status, "UNMATCHED"),
+          sql`(${matches.user1Id} = ${currentUserId} OR ${matches.user2Id} = ${currentUserId})`
+        )
+      );
+
+    const unmatchHistoryMap = new Map<string, Date | null>();
+    for (const record of pastUnmatches) {
+      const exPartnerId = record.user1Id === currentUserId ? record.user2Id : record.user1Id;
+      const existingDate = unmatchHistoryMap.get(exPartnerId);
+      if (!existingDate || (record.unmatchedAt && record.unmatchedAt > existingDate)) {
+        unmatchHistoryMap.set(exPartnerId, record.unmatchedAt);
+      }
+    }
+
+    // 4. Query available candidate users
     const candidates = await db
       .select({
         userId: users.id,
@@ -67,9 +92,12 @@ export class DiscoveryService {
       )
       .limit(30);
 
-    // 4. Sanitize profiles based on privacy / reveal settings
+    // 5. Sanitize profiles based on privacy / reveal settings and attach ex-match warnings
     return candidates.map((candidate) => {
       const isRevealed = candidate.isPublicReveal;
+      const previouslyUnmatched = unmatchHistoryMap.has(candidate.userId);
+      const lastUnmatchedAt = unmatchHistoryMap.get(candidate.userId) ?? null;
+
       return {
         userId: candidate.userId,
         isVerified: candidate.isVerified,
@@ -84,6 +112,11 @@ export class DiscoveryService {
         isPublicReveal: candidate.isPublicReveal,
         actualName: isRevealed ? candidate.actualName : "[HIDDEN - Connect & Mutually Reveal]",
         realPhotos: isRevealed ? candidate.realPhotos : [],
+        previouslyUnmatched,
+        lastUnmatchedAt,
+        warning: previouslyUnmatched
+          ? "Warning: You have previously matched and unmatched with this user (they may have updated their username)."
+          : null,
       };
     });
   }

@@ -1,4 +1,5 @@
 import { pgTable, uuid, varchar, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { users } from "./users.js";
 
 /**
@@ -23,7 +24,9 @@ export const matches = pgTable(
     unmatchedBy: uuid("unmatched_by").references(() => users.id),
   },
   (table) => [
-    uniqueIndex("unique_active_pair_idx").on(table.user1Id, table.user2Id),
+    uniqueIndex("unique_active_pair_idx")
+      .on(table.user1Id, table.user2Id)
+      .where(sql`${table.status} = 'ACTIVE'`),
   ]
 );
 

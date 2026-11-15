@@ -14,7 +14,7 @@ export class RequestController {
       }
 
       const result = await RequestService.sendRequest(senderId, receiverId);
-      return sendResponse(res, 201, true, "Connect request sent successfully", result);
+      return sendResponse(res, 201, true, result.message, result);
     } catch (error) {
       next(error);
     }

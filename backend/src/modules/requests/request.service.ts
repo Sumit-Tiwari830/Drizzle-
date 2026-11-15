@@ -1,14 +1,37 @@
 import { db } from "../../db/index.js";
 import { requests, users, profiles, matches } from "../../db/schema/index.js";
-import { eq, and, or, sql, gte } from "drizzle-orm";
+import { eq, and, or, sql, gte, desc } from "drizzle-orm";
 import { ApiError } from "../../utils/apiError.js";
 
 export class RequestService {
+  /**
+   * Helper: Check if two users have previously matched and unmatched
+   */
+  private static async getPreviousUnmatch(userAId: string, userBId: string) {
+    const [previousUnmatch] = await db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          or(
+            and(eq(matches.user1Id, userAId), eq(matches.user2Id, userBId)),
+            and(eq(matches.user1Id, userBId), eq(matches.user2Id, userAId))
+          ),
+          eq(matches.status, "UNMATCHED")
+        )
+      )
+      .orderBy(desc(matches.unmatchedAt))
+      .limit(1);
+
+    return previousUnmatch || null;
+  }
+
   /**
    * Send a Connect Request
    * Enforces:
    * 1. Sender and Receiver must NOT be locked (in an active match).
    * 2. Max 10 requests per user in a rolling 24-hour window.
+   * 3. Checks if sender & receiver previously unmatched and returns a warning.
    */
   static async sendRequest(senderId: string, receiverId: string) {
     if (senderId === receiverId) {
@@ -77,7 +100,11 @@ export class RequestService {
       throw new ApiError(409, "A pending request already exists between you and this user");
     }
 
-    // 5. Create request
+    // 5. Check if they previously matched and unmatched
+    const previousUnmatch = await this.getPreviousUnmatch(senderId, receiverId);
+    const previouslyUnmatched = Boolean(previousUnmatch);
+
+    // 6. Create request
     const [newRequest] = await db
       .insert(requests)
       .values({
@@ -88,8 +115,16 @@ export class RequestService {
       .returning();
 
     return {
+      message: previouslyUnmatched
+        ? "Connect request sent. Warning: You have previously matched and unmatched with this user."
+        : "Connect request sent successfully",
       request: newRequest,
       remainingToday: 10 - (requestCount + 1),
+      previouslyUnmatched,
+      lastUnmatchedAt: previousUnmatch?.unmatchedAt ?? null,
+      warning: previouslyUnmatched
+        ? "Warning: You have previously matched and unmatched with this user (they may have updated their username)."
+        : null,
     };
   }
 
@@ -124,13 +159,16 @@ export class RequestService {
     }
 
     // Action === "ACCEPT"
-    // Check if either user became locked in the meantime
     const [sender] = await db.select().from(users).where(eq(users.id, senderId)).limit(1);
     const [receiver] = await db.select().from(users).where(eq(users.id, receiverId)).limit(1);
 
     if (sender?.isLocked || receiver?.isLocked) {
       throw new ApiError(400, "One of the candidates is already in another active match");
     }
+
+    // Check if they previously unmatched so we can include a notice in the match response
+    const previousUnmatch = await this.getPreviousUnmatch(senderId, receiverId);
+    const previouslyUnmatched = Boolean(previousUnmatch);
 
     // 1. Mark request ACCEPTED
     await db
@@ -170,16 +208,47 @@ export class RequestService {
       );
 
     return {
-      message: "It's a Match! Both candidates are now locked in an exclusive pair.",
+      message: previouslyUnmatched
+        ? "It's a Re-Match! Note: You had previously unmatched with this user. Both candidates are now locked in an exclusive pair."
+        : "It's a Match! Both candidates are now locked in an exclusive pair.",
       match: newMatch,
+      previouslyUnmatched,
+      warning: previouslyUnmatched
+        ? "Warning: You have previously matched and unmatched with this user."
+        : null,
     };
   }
 
   /**
-   * Get user's incoming and outgoing requests
+   * Get user's incoming and outgoing requests (with ex-match warnings)
    */
   static async getMyRequests(userId: string) {
-    const incoming = await db
+    // 1. Fetch all past UNMATCHED records involving userId
+    const pastUnmatches = await db
+      .select({
+        user1Id: matches.user1Id,
+        user2Id: matches.user2Id,
+        unmatchedAt: matches.unmatchedAt,
+      })
+      .from(matches)
+      .where(
+        and(
+          eq(matches.status, "UNMATCHED"),
+          sql`(${matches.user1Id} = ${userId} OR ${matches.user2Id} = ${userId})`
+        )
+      );
+
+    const unmatchHistoryMap = new Map<string, Date | null>();
+    for (const record of pastUnmatches) {
+      const exPartnerId = record.user1Id === userId ? record.user2Id : record.user1Id;
+      const existingDate = unmatchHistoryMap.get(exPartnerId);
+      if (!existingDate || (record.unmatchedAt && record.unmatchedAt > existingDate)) {
+        unmatchHistoryMap.set(exPartnerId, record.unmatchedAt);
+      }
+    }
+
+    // 2. Fetch incoming requests
+    const incomingRaw = await db
       .select({
         id: requests.id,
         senderId: requests.senderId,
@@ -194,7 +263,20 @@ export class RequestService {
       .innerJoin(profiles, eq(requests.senderId, profiles.userId))
       .where(and(eq(requests.receiverId, userId), eq(requests.status, "PENDING")));
 
-    const outgoing = await db
+    const incoming = incomingRaw.map((req) => {
+      const previouslyUnmatched = unmatchHistoryMap.has(req.senderId);
+      return {
+        ...req,
+        previouslyUnmatched,
+        lastUnmatchedAt: unmatchHistoryMap.get(req.senderId) ?? null,
+        warning: previouslyUnmatched
+          ? "Warning: You previously matched and unmatched with this user (they may have changed their username)."
+          : null,
+      };
+    });
+
+    // 3. Fetch outgoing requests
+    const outgoingRaw = await db
       .select({
         id: requests.id,
         receiverId: requests.receiverId,
@@ -208,6 +290,18 @@ export class RequestService {
       .from(requests)
       .innerJoin(profiles, eq(requests.receiverId, profiles.userId))
       .where(and(eq(requests.senderId, userId), eq(requests.status, "PENDING")));
+
+    const outgoing = outgoingRaw.map((req) => {
+      const previouslyUnmatched = unmatchHistoryMap.has(req.receiverId);
+      return {
+        ...req,
+        previouslyUnmatched,
+        lastUnmatchedAt: unmatchHistoryMap.get(req.receiverId) ?? null,
+        warning: previouslyUnmatched
+          ? "Warning: You previously matched and unmatched with this user (they may have changed their username)."
+          : null,
+      };
+    });
 
     return { incoming, outgoing };
   }
