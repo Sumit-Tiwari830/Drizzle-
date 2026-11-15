@@ -30,8 +30,9 @@ export class MatchController {
     try {
       const userId = req.user!.id;
       const { id } = req.params;
+      const io = req.app.get("io");
 
-      const result = await MatchService.unmatch(id, userId);
+      const result = await MatchService.unmatch(id, userId, io);
       return sendResponse(res, 200, true, result.message);
     } catch (error) {
       next(error);

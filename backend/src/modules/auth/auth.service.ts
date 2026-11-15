@@ -4,6 +4,8 @@ import { eq, and, or } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../../utils/hash.js";
 import { generateToken } from "../../utils/jwt.js";
 import { ApiError } from "../../utils/apiError.js";
+import { Message } from "../../db/msg_schema.js";
+import { NotificationService } from "../notifications/notification.service.js";
 
 interface RegisterInput {
   email: string;
@@ -190,6 +192,21 @@ export class AuthService {
         .update(matches)
         .set({ status: "UNMATCHED", unmatchedAt: new Date(), unmatchedBy: userId })
         .where(eq(matches.id, activeMatch.id));
+      // Delete chat history from MongoDB
+      await Message.deleteMany({ matchId: activeMatch.id });
+
+      // Notify partner in their MongoDB notification box
+      await NotificationService.createNotification(
+        partnerId,
+        "UNMATCHED",
+        "Match Ended (Account Closed)",
+        "Your match partner has deactivated their account. You are now unlocked and can discover new profiles.",
+        {
+          matchId: activeMatch.id,
+          reason: "PARTNER_ACCOUNT_DELETED",
+          unmatchedAt: new Date(),
+        }
+      );
     }
 
     // 2. Soft-delete user

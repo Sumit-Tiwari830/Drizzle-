@@ -1,18 +1,46 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
-// Define the TypeScript interface for the document
 export interface IMessage extends Document {
-  user: string;
+  matchId: string;
+  senderId: string;
+  receiverId: string;
   message: string;
   createdAt: Date;
 }
 
-// Create the Mongoose schema
 const MessageSchema: Schema = new Schema({
-  user: { type: String, required: true },
-  message: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
+  matchId: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  senderId: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  receiverId: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  message: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 2000,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-// Export the Mongoose model
-export const Message = mongoose.model<IMessage>('Message', MessageSchema);
+// 1. Fast pagination index for match conversations
+MessageSchema.index({ matchId: 1, createdAt: 1 });
+
+// 2. 30-Day TTL Index: automatically deletes documents after 30 days (30 * 24 * 60 * 60 seconds)
+MessageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
+
+export const Message =
+  mongoose.models.Message || mongoose.model<IMessage>("Message", MessageSchema);

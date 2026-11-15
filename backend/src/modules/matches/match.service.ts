@@ -2,6 +2,9 @@ import { db } from "../../db/index.js";
 import { matches, users, profiles, Profile } from "../../db/schema/index.js";
 import { eq, and, or } from "drizzle-orm";
 import { ApiError } from "../../utils/apiError.js";
+import { Message } from "../../db/msg_schema.js";
+import { NotificationService } from "../notifications/notification.service.js";
+import { Server } from "socket.io";
 
 export class MatchService {
   /**
@@ -121,7 +124,7 @@ export class MatchService {
    * - Both candidates are UNLOCKED (isLocked = false) and become available again!
    * - Both candidates can now change their username if they desire.
    */
-  static async unmatch(matchId: string, userId: string) {
+  static async unmatch(matchId: string, userId: string, io?: Server) {
     const [match] = await db
       .select()
       .from(matches)
@@ -137,6 +140,17 @@ export class MatchService {
     if (!match) {
       throw new ApiError(404, "Active match not found");
     }
+
+    const partnerId = match.user1Id === userId ? match.user2Id : match.user1Id;
+
+    // Fetch unmatcher's pseudonym profile for notification details
+    const [unmatcherProfile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
+
+    const unmatcherUsername = unmatcherProfile?.username || "Your match";
 
     // 1. Mark match UNMATCHED
     await db
@@ -154,8 +168,26 @@ export class MatchService {
       .set({ isLocked: false })
       .where(or(eq(users.id, match.user1Id), eq(users.id, match.user2Id)));
 
+    // 3. Immediately delete all chat message history from MongoDB
+    await Message.deleteMany({ matchId });
+
+    // 4. Send automated notification to the partner's MongoDB notification box
+    await NotificationService.createNotification(
+      partnerId,
+      "UNMATCHED",
+      "You have been unmatched",
+      `Your match with @${unmatcherUsername} has ended. You are now unlocked, free to connect with new candidates, and you can update your username.`,
+      {
+        matchId,
+        unmatchedBy: userId,
+        unmatchedByUsername: unmatcherUsername,
+        unmatchedAt: new Date(),
+      },
+      io
+    );
+
     return {
-      message: "Successfully unmatched. Both candidates are now unlocked, available for new requests, and can update their username.",
+      message: "Successfully unmatched. Both candidates are now unlocked, available for new requests, chat history has been deleted, and partner has been notified.",
     };
   }
 }
