@@ -1,15 +1,15 @@
 import { relations } from "drizzle-orm";
-import { masterDirectory } from "./masterDirectory.js";
-import { users } from "./users.js";
-import { profiles } from "./profiles.js";
-import { requests } from "./requests.js";
-import { matches } from "./matches.js";
+import { masterDirectory } from "./masterDirectory";
+import { users } from "./users";
+import { profiles } from "./profiles";
+import { requests } from "./requests";
+import { matches } from "./matches";
 
-export { masterDirectory } from "./masterDirectory.js";
-export { users } from "./users.js";
-export { profiles } from "./profiles.js";
-export { requests } from "./requests.js";
-export { matches } from "./matches.js";
+export { masterDirectory } from "./masterDirectory";
+export { users } from "./users";
+export { profiles } from "./profiles";
+export { requests } from "./requests";
+export { matches } from "./matches";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {
