@@ -1,0 +1,45 @@
+# ==============================================================================
+# RENDER BLUEPRINT SPECIFICATION (render.yaml)
+# Deploy Drizzle Backend to Render Free / Starter Web Service
+# ==============================================================================
+
+services:
+  - type: web
+    name: drizzle-backend
+    runtime: node
+    plan: free
+    region: singapore # Options: oregon, frankfurt, singapore, ohio
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CLIENT_URL
+        value: "*"
+      - key: DATABASE_URL
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: UPLOAD_DEST
+        value: local
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
