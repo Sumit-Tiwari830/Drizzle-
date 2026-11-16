@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { CandidateFeedItem } from "../types";
 import { THEME } from "../constants/theme";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 interface HingeCardProps {
   candidate: CandidateFeedItem;
@@ -29,6 +30,7 @@ export const HingeCard: React.FC<HingeCardProps> = ({
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmSend, setShowConfirmSend] = useState(false);
 
   // Default Hinge prompts if backend didn't provide custom ones
   const prompts = candidate.prompts || [
@@ -240,7 +242,7 @@ export const HingeCard: React.FC<HingeCardProps> = ({
 
             <TouchableOpacity
               style={[styles.modalSendButton, submitting && { opacity: 0.7 }]}
-              onPress={handleSend}
+              onPress={() => setShowConfirmSend(true)}
               disabled={submitting}
             >
               {submitting ? (
@@ -252,6 +254,23 @@ export const HingeCard: React.FC<HingeCardProps> = ({
           </View>
         </View>
       </Modal>
+
+      {/* Connect Request Confirmation Modal */}
+      <ConfirmationModal
+        visible={showConfirmSend}
+        title="Send Connect Request?"
+        message={`Send connection invite to ${candidate.username}? If accepted, both of your profiles will enter an exclusive match. Uses 1 of your ${remainingQuota} invites today.`}
+        confirmText="Yes, Send Request"
+        cancelText="Cancel"
+        isDestructive={false}
+        icon="heart-outline"
+        loading={submitting}
+        onConfirm={async () => {
+          await handleSend();
+          setShowConfirmSend(false);
+        }}
+        onCancel={() => setShowConfirmSend(false)}
+      />
     </View>
   );
 };

@@ -12,4 +12,10 @@ router.post("/upload-master-sheet", uploadExcel.single("file"), AdminController.
 router.get("/unverified-users", AdminController.getUnverifiedUsers);
 router.post("/verify-user/:id", AdminController.verifyUser);
 
+// User Management (Admin block & remove rights)
+router.get("/users", AdminController.getAllUsers);
+router.patch("/users/:id/block", AdminController.blockUser);
+router.patch("/users/:id/unblock", AdminController.unblockUser);
+router.delete("/users/:id", AdminController.removeUser);
+
 export default router;

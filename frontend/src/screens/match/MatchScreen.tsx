@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
 import { AppHeader } from "../../components/AppHeader";
 import { IcebreakerBanner } from "../../components/IcebreakerBanner";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useMatchStore } from "../../stores/matchStore";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -23,6 +24,9 @@ export const MatchScreen = ({ navigation }: any) => {
   const requestReveal = useMatchStore((s) => s.requestReveal);
   const unmatch = useMatchStore((s) => s.unmatch);
   const user = useAuthStore((s) => s.user);
+
+  const [showUnmatchModal, setShowUnmatchModal] = useState(false);
+  const [unmatching, setUnmatching] = useState(false);
 
   useEffect(() => {
     fetchMatch();
@@ -40,27 +44,17 @@ export const MatchScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleUnmatch = () => {
-    Alert.alert(
-      "End Connection?",
-      "Are you sure you want to end this connection? This will close the match for both of you and your private conversation will disappear.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, End Match",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await unmatch();
-              Alert.alert("Connection Ended", "You can now discover new connections.");
-              navigation.navigate("FeedTab");
-            } catch (err: any) {
-              Alert.alert("Error", err.message || "Failed to end connection.");
-            }
-          },
-        },
-      ]
-    );
+  const handleConfirmUnmatch = async () => {
+    try {
+      setUnmatching(true);
+      await unmatch();
+      setShowUnmatchModal(false);
+      navigation.navigate("FeedTab");
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to end connection.");
+    } finally {
+      setUnmatching(false);
+    }
   };
 
   if (loading) {
@@ -156,7 +150,7 @@ export const MatchScreen = ({ navigation }: any) => {
               </View>
               {partner?.lookingFor && (
                 <View style={styles.chip}>
-                  <Ionicons name="sparkles-outline" size={13} color={THEME.colors.primary} />
+                  <Ionicons name="flame-outline" size={13} color={THEME.colors.primary} />
                   <Text style={[styles.chipText, { color: THEME.colors.primary }]}>{partner.lookingFor}</Text>
                 </View>
               )}
@@ -192,13 +186,27 @@ export const MatchScreen = ({ navigation }: any) => {
             </View>
 
             {/* Unmatch Action */}
-            <TouchableOpacity style={styles.unmatchButton} onPress={handleUnmatch}>
+            <TouchableOpacity style={styles.unmatchButton} onPress={() => setShowUnmatchModal(true)}>
               <Ionicons name="close-circle-outline" size={16} color={THEME.colors.textMuted} />
               <Text style={styles.unmatchButtonText}>End Connection</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {/* End Connection Confirmation Modal */}
+      <ConfirmationModal
+        visible={showUnmatchModal}
+        title="End Connection?"
+        message="Are you sure you want to end this connection? This will close the match for both of you, unlock both profiles to explore new matches, and delete your private conversation."
+        confirmText="End Connection"
+        cancelText="Keep Connected"
+        isDestructive={true}
+        icon="heart-dislike-outline"
+        loading={unmatching}
+        onConfirm={handleConfirmUnmatch}
+        onCancel={() => setShowUnmatchModal(false)}
+      />
     </View>
   );
 };

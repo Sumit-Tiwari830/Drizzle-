@@ -1,8 +1,10 @@
 import * as XLSX from "xlsx";
 import { db } from "../../db/index.js";
-import { masterDirectory, users, profiles } from "../../db/schema/index.js";
-import { eq, and } from "drizzle-orm";
+import { masterDirectory, users, profiles, requests, matches, otps, userDevices } from "../../db/schema/index.js";
+import { eq, and, or, desc } from "drizzle-orm";
 import { ApiError } from "../../utils/apiError.js";
+import { Message } from "../../db/msg_schema.js";
+import { NotificationService } from "../notifications/notification.service.js";
 
 export class AdminService {
   /**
@@ -156,5 +158,183 @@ export class AdminService {
     await db.update(users).set({ isVerified: true }).where(eq(users.id, userId));
 
     return { message: "User successfully verified and added to master directory" };
+  }
+
+  /**
+   * Get all users in the system (with profile & match lock status)
+   */
+  static async getAllUsers() {
+    return db
+      .select({
+        id: users.id,
+        email: users.email,
+        role: users.role,
+        isVerified: users.isVerified,
+        isEmailVerified: users.isEmailVerified,
+        isLocked: users.isLocked,
+        isDeleted: users.isDeleted,
+        deletedAt: users.deletedAt,
+        createdAt: users.createdAt,
+        username: profiles.username,
+        actualName: profiles.actualName,
+        gender: profiles.gender,
+        dob: profiles.dob,
+        height: profiles.height,
+        region: profiles.region,
+        city: profiles.city,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.id, profiles.userId))
+      .orderBy(desc(users.createdAt));
+  }
+
+  /**
+   * Block / Deactivate any user
+   * - Sets isDeleted = true, deletedAt = NOW()
+   * - If matched, dissolves match, unlocks partner, cleans chat
+   * - Cancels any pending connect requests
+   */
+  static async blockUser(targetUserId: string, adminUserId?: string) {
+    if (adminUserId && targetUserId === adminUserId) {
+      throw new ApiError(400, "Admin cannot block their own account");
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // 1. Check if user is in an active match and release partner
+    const [activeMatch] = await db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          or(eq(matches.user1Id, targetUserId), eq(matches.user2Id, targetUserId)),
+          eq(matches.status, "ACTIVE")
+        )
+      )
+      .limit(1);
+
+    if (activeMatch) {
+      const partnerId = activeMatch.user1Id === targetUserId ? activeMatch.user2Id : activeMatch.user1Id;
+      await db.update(users).set({ isLocked: false }).where(eq(users.id, partnerId));
+      await db
+        .update(matches)
+        .set({
+          status: "UNMATCHED",
+          unmatchedAt: new Date(),
+          unmatchedBy: adminUserId || targetUserId,
+        })
+        .where(eq(matches.id, activeMatch.id));
+
+      await Message.deleteMany({ matchId: activeMatch.id });
+
+      await NotificationService.createNotification(
+        partnerId,
+        "UNMATCHED",
+        "Connection Closed",
+        "Your match was closed because the partner's account was deactivated.",
+        { matchId: activeMatch.id, reason: "ADMIN_ACTION" }
+      );
+    }
+
+    // 2. Cancel pending requests
+    await db
+      .update(requests)
+      .set({ status: "CANCELLED", respondedAt: new Date() })
+      .where(
+        and(
+          or(eq(requests.senderId, targetUserId), eq(requests.receiverId, targetUserId)),
+          eq(requests.status, "PENDING")
+        )
+      );
+
+    // 3. Mark user deactivated/blocked
+    await db
+      .update(users)
+      .set({ isDeleted: true, deletedAt: new Date(), isLocked: false })
+      .where(eq(users.id, targetUserId));
+
+    return { message: `User ${user.email} has been successfully blocked/deactivated.` };
+  }
+
+  /**
+   * Unblock / Reactivate user
+   */
+  static async unblockUser(targetUserId: string) {
+    const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    await db
+      .update(users)
+      .set({ isDeleted: false, deletedAt: null })
+      .where(eq(users.id, targetUserId));
+
+    return { message: `User ${user.email} has been reactivated.` };
+  }
+
+  /**
+   * Permanently Remove / Purge any user
+   */
+  static async removeUser(targetUserId: string, adminUserId?: string) {
+    if (adminUserId && targetUserId === adminUserId) {
+      throw new ApiError(400, "Admin cannot remove their own account");
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // Release partner if in active match
+    const [activeMatch] = await db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          or(eq(matches.user1Id, targetUserId), eq(matches.user2Id, targetUserId)),
+          eq(matches.status, "ACTIVE")
+        )
+      )
+      .limit(1);
+
+    if (activeMatch) {
+      const partnerId = activeMatch.user1Id === targetUserId ? activeMatch.user2Id : activeMatch.user1Id;
+      await db.update(users).set({ isLocked: false }).where(eq(users.id, partnerId));
+      await Message.deleteMany({ matchId: activeMatch.id });
+    }
+
+    // Clear unmatchedBy reference on any matches where this user was the one who unmatched
+    await db
+      .update(matches)
+      .set({ unmatchedBy: null })
+      .where(eq(matches.unmatchedBy, targetUserId));
+
+    // Delete matches involving this user
+    await db
+      .delete(matches)
+      .where(or(eq(matches.user1Id, targetUserId), eq(matches.user2Id, targetUserId)));
+
+    // Delete requests involving this user
+    await db
+      .delete(requests)
+      .where(or(eq(requests.senderId, targetUserId), eq(requests.receiverId, targetUserId)));
+
+    // Delete profile
+    await db.delete(profiles).where(eq(profiles.userId, targetUserId));
+
+    // Delete otps
+    await db.delete(otps).where(eq(otps.email, user.email));
+
+    // Delete devices
+    await db.delete(userDevices).where(eq(userDevices.userId, targetUserId));
+
+    // Delete user
+    await db.delete(users).where(eq(users.id, targetUserId));
+
+    return { message: `User ${user.email} has been permanently removed.` };
   }
 }

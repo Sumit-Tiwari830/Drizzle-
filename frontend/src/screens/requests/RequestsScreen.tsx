@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
 import { AppHeader } from "../../components/AppHeader";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { requestsApi } from "../../api";
 import { ConnectRequest } from "../../types";
 import { useMatchStore } from "../../stores/matchStore";
@@ -23,6 +24,9 @@ export const RequestsScreen = ({ navigation }: any) => {
   const [sentRequests, setSentRequests] = useState<ConnectRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [requestToAccept, setRequestToAccept] = useState<ConnectRequest | null>(null);
+  const [requestToDecline, setRequestToDecline] = useState<string | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
   const fetchMatch = useMatchStore((s) => s.fetchMatch);
 
   const loadRequests = async () => {
@@ -46,26 +50,33 @@ export const RequestsScreen = ({ navigation }: any) => {
     loadRequests();
   }, []);
 
-  const handleAccept = async (request: ConnectRequest) => {
+  const handleConfirmAccept = async () => {
+    if (!requestToAccept) return;
     try {
-      await requestsApi.accept(request.id);
-      Alert.alert("It's a Match! 🎉", "You are now in an exclusive 1-to-1 match. Say hello before the 48-hour icebreaker expires!");
+      setModalLoading(true);
+      await requestsApi.accept(requestToAccept.id);
+      setRequestToAccept(null);
       await fetchMatch();
       navigation.navigate("MatchTab");
     } catch (err: any) {
-      // Backend returns clear message when already cancelled / matched
       Alert.alert("Unable to Accept", err.message || "Request is no longer active.");
-      // Refresh requests list to remove stale item
       loadRequests();
+    } finally {
+      setModalLoading(false);
     }
   };
 
-  const handleReject = async (requestId: string) => {
+  const handleConfirmDecline = async () => {
+    if (!requestToDecline) return;
     try {
-      await requestsApi.reject(requestId);
-      setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
+      setModalLoading(true);
+      await requestsApi.reject(requestToDecline);
+      setReceivedRequests((prev) => prev.filter((r) => r.id !== requestToDecline));
+      setRequestToDecline(null);
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to reject request.");
+      Alert.alert("Error", err.message || "Failed to decline request.");
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -171,7 +182,7 @@ export const RequestsScreen = ({ navigation }: any) => {
                   <View style={styles.actionRow}>
                     <TouchableOpacity
                       style={styles.rejectButton}
-                      onPress={() => handleReject(item.id)}
+                      onPress={() => setRequestToDecline(item.id)}
                     >
                       <Ionicons name="close" size={18} color={THEME.colors.textSecondary} />
                       <Text style={styles.rejectButtonText}>Decline</Text>
@@ -179,7 +190,7 @@ export const RequestsScreen = ({ navigation }: any) => {
 
                     <TouchableOpacity
                       style={styles.acceptButton}
-                      onPress={() => handleAccept(item)}
+                      onPress={() => setRequestToAccept(item)}
                     >
                       <Ionicons name="checkmark" size={18} color="#FFF" />
                       <Text style={styles.acceptButtonText}>Accept & Match</Text>
@@ -211,6 +222,34 @@ export const RequestsScreen = ({ navigation }: any) => {
           }
         />
       )}
+
+      {/* Accept Connection Confirmation Modal */}
+      <ConfirmationModal
+        visible={!!requestToAccept}
+        title="Accept Connection?"
+        message={`Are you sure you want to connect with ${requestToAccept?.partnerProfile?.username || "this candidate"}? Once accepted, both profiles will be locked for an exclusive 1-to-1 match and a 48-hour icebreaker countdown will begin.`}
+        confirmText="Accept & Match"
+        cancelText="Cancel"
+        isDestructive={false}
+        icon="heart-outline"
+        loading={modalLoading}
+        onConfirm={handleConfirmAccept}
+        onCancel={() => setRequestToAccept(null)}
+      />
+
+      {/* Decline Connection Confirmation Modal */}
+      <ConfirmationModal
+        visible={!!requestToDecline}
+        title="Decline Request?"
+        message="Are you sure you want to decline this connect request?"
+        confirmText="Decline"
+        cancelText="Keep"
+        isDestructive={true}
+        icon="close-circle-outline"
+        loading={modalLoading}
+        onConfirm={handleConfirmDecline}
+        onCancel={() => setRequestToDecline(null)}
+      />
     </View>
   );
 };

@@ -10,6 +10,7 @@ export interface User {
 export interface Profile {
   userId: string;
   username: string;
+  actualName?: string;
   avatarUrl: string;
   photos: string[];
   bio: string;

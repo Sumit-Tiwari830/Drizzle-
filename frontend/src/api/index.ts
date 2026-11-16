@@ -133,6 +133,11 @@ export const profileApi = {
     const res = await apiClient.delete("/profiles/photos", { data: { photoUrl } });
     return res.data;
   },
+
+  deleteAccount: async () => {
+    const res = await apiClient.delete("/profiles/me");
+    return res.data;
+  },
 };
 
 // ==========================================
@@ -146,6 +151,32 @@ export const pushApi = {
 
   removeToken: async (token: string) => {
     const res = await apiClient.delete("/notifications/device-token", { data: { token } });
+    return res.data;
+  },
+};
+
+// ==========================================
+// 8. Admin Management
+// ==========================================
+export const adminApi = {
+  getAllUsers: async () => {
+    const res = await apiClient.get("/admin/users");
+    return res.data.data;
+  },
+  blockUser: async (userId: string) => {
+    const res = await apiClient.patch(`/admin/users/${userId}/block`);
+    return res.data;
+  },
+  unblockUser: async (userId: string) => {
+    const res = await apiClient.patch(`/admin/users/${userId}/unblock`);
+    return res.data;
+  },
+  removeUser: async (userId: string) => {
+    const res = await apiClient.delete(`/admin/users/${userId}`);
+    return res.data;
+  },
+  verifyUser: async (userId: string) => {
+    const res = await apiClient.post(`/admin/verify-user/${userId}`);
     return res.data;
   },
 };

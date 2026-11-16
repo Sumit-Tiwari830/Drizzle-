@@ -19,5 +19,6 @@ router.put("/me", requireEmailVerified, ProfileController.updateProfile);
 router.post("/upload-avatar", requireEmailVerified, uploadImage.single("avatar"), ProfileController.uploadAvatar);
 router.post("/upload-photo", requireEmailVerified, uploadImage.single("photo"), ProfileController.uploadPhoto);
 router.delete("/photos", requireEmailVerified, ProfileController.deletePhoto);
+router.delete("/me", ProfileController.deleteAccount);
 
 export default router;

@@ -150,12 +150,50 @@ export class ProfileService {
       };
     }
 
+    // For existing profile:
+    // 1. Immutable Identity Protection:
+    // Gender and Actual Name are verified and immutable once set. Stripped from update payload.
+    const updatePayload: Record<string, any> = {
+      updatedAt: new Date(),
+    };
+
+    // 2. Username (Pseudonym) is editable anytime:
+    if (data.username !== undefined) {
+      const cleanUsername = data.username.trim();
+      if (cleanUsername.length < 3) {
+        throw new ApiError(400, "Username must be at least 3 characters long");
+      }
+      if (cleanUsername !== existing.username) {
+        const [taken] = await db
+          .select()
+          .from(profiles)
+          .where(eq(profiles.username, cleanUsername))
+          .limit(1);
+
+        if (taken && taken.userId !== userId) {
+          throw new ApiError(409, "Username already taken by another user");
+        }
+        updatePayload.username = cleanUsername;
+      }
+    }
+
+    // 3. User-customizable fields (Bio, Interests, Height, Region, Preferences, Photos):
+    if (data.dob !== undefined) updatePayload.dob = data.dob;
+    if (data.bio !== undefined) updatePayload.bio = data.bio;
+    if (data.interests !== undefined) updatePayload.interests = data.interests;
+    if (data.city !== undefined) updatePayload.city = data.city;
+    if (data.height !== undefined) updatePayload.height = data.height;
+    if (data.region !== undefined) updatePayload.region = data.region;
+    if (data.isRegionVisible !== undefined) updatePayload.isRegionVisible = data.isRegionVisible;
+    if (data.lookingFor !== undefined) updatePayload.lookingFor = data.lookingFor;
+    if (data.interestedIn !== undefined) updatePayload.interestedIn = data.interestedIn;
+    if (data.avatarUrl !== undefined) updatePayload.avatarUrl = data.avatarUrl;
+    if (data.realPhotos !== undefined) updatePayload.realPhotos = data.realPhotos;
+    if (data.isPublicReveal !== undefined) updatePayload.isPublicReveal = data.isPublicReveal;
+
     const [updatedProfile] = await db
       .update(profiles)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(eq(profiles.userId, userId))
       .returning();
 

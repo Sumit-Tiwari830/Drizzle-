@@ -35,4 +35,45 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async getAllUsers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const list = await AdminService.getAllUsers();
+      return sendResponse(res, 200, true, "All users retrieved successfully", list);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async blockUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const targetUserId = req.params.id as string;
+      const adminUserId = req.user!.id;
+      const result = await AdminService.blockUser(targetUserId, adminUserId);
+      return sendResponse(res, 200, true, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async unblockUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const targetUserId = req.params.id as string;
+      const result = await AdminService.unblockUser(targetUserId);
+      return sendResponse(res, 200, true, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async removeUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const targetUserId = req.params.id as string;
+      const adminUserId = req.user!.id;
+      const result = await AdminService.removeUser(targetUserId, adminUserId);
+      return sendResponse(res, 200, true, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

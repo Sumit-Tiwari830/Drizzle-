@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ProfileService } from "./profile.service.js";
+import { AuthService } from "../auth/auth.service.js";
 import { sendResponse } from "../../utils/apiResponse.js";
 import { ApiError } from "../../utils/apiError.js";
 
@@ -157,6 +158,16 @@ export class ProfileController {
       }
 
       const result = await ProfileService.deletePhoto(userId, photoUrl);
+      return sendResponse(res, 200, true, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteAccount(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const result = await AuthService.deleteAccount(userId);
       return sendResponse(res, 200, true, result.message, result);
     } catch (error) {
       next(error);
