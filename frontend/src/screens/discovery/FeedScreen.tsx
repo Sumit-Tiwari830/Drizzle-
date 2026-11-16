@@ -102,7 +102,7 @@ export const FeedScreen = ({ navigation }: any) => {
         </View>
       ) : candidates.length === 0 ? (
         <View style={styles.centerContainer}>
-          <Ionicons name="sparkles-outline" size={48} color={THEME.colors.textMuted} />
+          <Ionicons name="heart-outline" size={48} color={THEME.colors.textMuted} />
           <Text style={styles.emptyTitle}>You're All Caught Up!</Text>
           <Text style={styles.emptySubtitle}>
             No more profiles in your region right now. Check your Requests tab or check back soon.

@@ -155,7 +155,7 @@ export const HingeCard: React.FC<HingeCardProps> = ({
 
         {candidate.lookingFor ? (
           <View style={styles.attributeChip}>
-            <Ionicons name="sparkles-outline" size={14} color={THEME.colors.primary} />
+            <Ionicons name="search-outline" size={14} color={THEME.colors.primary} />
             <Text style={[styles.attributeText, { color: THEME.colors.primary }]}>{candidate.lookingFor}</Text>
           </View>
         ) : null}
@@ -198,7 +198,7 @@ export const HingeCard: React.FC<HingeCardProps> = ({
         onPress={() => handleOpenConnect()}
         activeOpacity={0.85}
       >
-        <Ionicons name="sparkles" size={17} color="#FFF" />
+        <Ionicons name="paper-plane" size={17} color="#FFF" />
         <Text style={styles.connectButtonText}>Send Connection Request</Text>
       </TouchableOpacity>
 

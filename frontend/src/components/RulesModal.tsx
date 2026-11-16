@@ -30,7 +30,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ visible, onClose }) => {
               style={styles.logoIcon}
               resizeMode="contain"
             />
-            <Text style={styles.navTitle}>Community Principles</Text>
+            <Text style={styles.navTitle}>App Rules</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="close" size={20} color={THEME.colors.textSecondary} />
@@ -40,9 +40,9 @@ export const RulesModal: React.FC<RulesModalProps> = ({ visible, onClose }) => {
         <ScrollView style={styles.scrollList} contentContainerStyle={styles.scrollContent}>
           {/* Header Intro Banner */}
           <View style={styles.introSection}>
-            <Text style={styles.introHeadline}>Dating designed to be intentional.</Text>
+            <Text style={styles.introHeadline}>Drizzle Dating Rules</Text>
             <Text style={styles.introBody}>
-              Drizzle is built around genuine respect and undivided attention. Here is how our community thrives together.
+              Drizzle is built around genuine respect and undivided attention. Here are the core rules of our community.
             </Text>
           </View>
 

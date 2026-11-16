@@ -42,7 +42,7 @@ export const COMMUNITY_RULES: CommunityRule[] = [
     tagline: "Intentional dating over mindless swiping",
     description:
       "You receive 10 curated invitations every rolling 24 hours. This keeps our community thoughtful and ensures every invite you send really counts.",
-    icon: "sparkles-outline",
+    icon: "flame-outline",
   },
   {
     id: "privacy_shield",

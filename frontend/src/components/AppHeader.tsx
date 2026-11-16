@@ -41,7 +41,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       <View style={styles.actionsRow}>
         {quotaRemaining !== undefined && (
           <View style={styles.quotaPill}>
-            <Ionicons name="sparkles" size={13} color={THEME.colors.secondary} />
+            <Ionicons name="heart" size={12} color={THEME.colors.primary} />
             <Text style={styles.quotaText}>{quotaRemaining}/10 left</Text>
           </View>
         )}
@@ -52,8 +52,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             onPress={() => setRulesVisible(true)}
             activeOpacity={0.8}
           >
-            <Ionicons name="sparkles-outline" size={14} color={THEME.colors.primaryDark} />
-            <Text style={styles.rulesButtonText}>Principles</Text>
+            <Text style={styles.rulesButtonText}>Rules</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -106,8 +105,8 @@ const styles = StyleSheet.create({
   quotaPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: THEME.colors.secondaryLight,
-    paddingHorizontal: 9,
+    backgroundColor: THEME.colors.primaryLight,
+    paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: THEME.borderRadius.full,
     gap: 4,
@@ -115,22 +114,22 @@ const styles = StyleSheet.create({
   quotaText: {
     fontSize: 12,
     fontWeight: "700",
-    color: THEME.colors.secondary,
+    color: THEME.colors.primary,
   },
   rulesButton: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: THEME.colors.surfaceSecondary,
     borderWidth: 1,
     borderColor: THEME.colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: THEME.borderRadius.full,
-    gap: 4,
+    alignItems: "center",
+    justifyContent: "center",
   },
   rulesButtonText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "800",
     color: THEME.colors.textPrimary,
+    letterSpacing: 0.3,
   },
 });
