@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { Notification, INotification } from "../../db/notification_schema.js";
 import { ApiError } from "../../utils/apiError.js";
 import { PushService } from "../../services/push.service.js";
+import { getIO } from "../../sockets/index.js";
 
 export class NotificationService {
   /**
@@ -10,7 +11,7 @@ export class NotificationService {
    */
   static async createNotification(
     userId: string,
-    type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM",
+    type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM" | "VERIFIED" | "ACCOUNT_STATUS",
     title: string,
     message: string,
     metadata: Record<string, any> = {},
@@ -26,8 +27,9 @@ export class NotificationService {
     });
 
     // 1. Real-time delivery to user's socket room if connected
-    if (io) {
-      io.to(`user_${userId}`).emit("new_notification", notification);
+    const socketServer = io || getIO();
+    if (socketServer) {
+      socketServer.to(`user_${userId}`).emit("new_notification", notification);
     }
 
     // 2. Mobile/Web Push Notification dispatch

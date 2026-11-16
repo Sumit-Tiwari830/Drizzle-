@@ -155,11 +155,15 @@ export class AuthService {
     const [user] = await db
       .select()
       .from(users)
-      .where(and(eq(users.email, email), eq(users.isDeleted, false)))
+      .where(eq(users.email, email))
       .limit(1);
 
     if (!user) {
       throw new ApiError(401, "Invalid email or password");
+    }
+
+    if (user.isDeleted) {
+      throw new ApiError(403, "Your account has been deactivated or blocked by administration. Please contact support.");
     }
 
     const isMatch = await comparePassword(passwordInput, user.passwordHash);

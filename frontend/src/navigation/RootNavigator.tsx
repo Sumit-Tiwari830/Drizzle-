@@ -6,12 +6,14 @@ import { RegisterScreen } from "../screens/auth/RegisterScreen";
 import { VerifyOtpScreen } from "../screens/auth/VerifyOtpScreen";
 import { OnboardingScreen } from "../screens/onboarding/OnboardingScreen";
 import { ChatScreen } from "../screens/match/ChatScreen";
+import { AdminDashboardScreen } from "../screens/admin/AdminDashboardScreen";
 import { MainTabs } from "./MainTabs";
 import { useAuthStore } from "../stores/authStore";
 import { useNotificationStore } from "../stores/notificationStore";
 import { socketService } from "../services/socket.service";
 import { storage } from "../utils/storage";
 import { GlobalAlertModal } from "../components/GlobalAlertModal";
+import { showAlert } from "../stores/alertStore";
 import { THEME } from "../constants/theme";
 
 const Stack = createNativeStackNavigator();
@@ -22,6 +24,8 @@ export const RootNavigator = () => {
   const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
   const checkSession = useAuthStore((s) => s.checkSession);
+  const refreshProfile = useAuthStore((s) => s.refreshProfile);
+  const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
     checkSession();
@@ -35,11 +39,32 @@ export const RootNavigator = () => {
           socketService.joinUserRoom(user.id);
           socketService.onNewNotification((notif) => {
             useNotificationStore.getState().addNotification(notif);
+
+            // In-app popups for administrative actions
+            if (notif.type === "VERIFIED") {
+              showAlert({
+                type: "success",
+                title: notif.title || "Account Verified! 🌟",
+                message: notif.message || "Your profile credentials have been officially verified by Drizzle Administration.",
+                buttonText: "Awesome!",
+              });
+              refreshProfile();
+            } else if (notif.type === "ACCOUNT_STATUS" && notif.metadata?.isDeleted) {
+              showAlert({
+                type: "error",
+                title: notif.title || "Account Suspended 🚫",
+                message: notif.message || "Your account has been deactivated by Drizzle Administration.",
+                buttonText: "OK",
+                onConfirm: () => {
+                  logout();
+                },
+              });
+            }
           });
         }
       });
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, refreshProfile, logout]);
 
   if (isLoading) {
     return (
@@ -71,6 +96,11 @@ export const RootNavigator = () => {
             <Stack.Screen
               name="ChatRoom"
               component={ChatScreen}
+              options={{ presentation: "card" }}
+            />
+            <Stack.Screen
+              name="AdminDashboard"
+              component={AdminDashboardScreen}
               options={{ presentation: "card" }}
             />
           </>

@@ -2,9 +2,31 @@ export interface User {
   id: string;
   email: string;
   isEmailVerified: boolean;
+  isVerified?: boolean;
   isLocked: boolean;
+  isDeleted?: boolean;
   role: string;
   createdAt: string;
+}
+
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  role: string;
+  isVerified: boolean;
+  isEmailVerified: boolean;
+  isLocked: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+  username?: string | null;
+  actualName?: string | null;
+  gender?: string | null;
+  height?: string | number | null;
+  region?: string | null;
+  city?: string | null;
+  avatarUrl?: string | null;
+  dob?: string | null;
 }
 
 export interface Profile {
@@ -100,7 +122,7 @@ export interface AppRule {
 export interface AppNotification {
   _id: string;
   userId: string;
-  type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM";
+  type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM" | "VERIFIED" | "ACCOUNT_STATUS";
   title: string;
   message: string;
   metadata?: Record<string, any>;

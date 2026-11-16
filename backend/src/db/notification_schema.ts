@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface INotification extends Document {
   userId: string;
-  type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM";
+  type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM" | "VERIFIED" | "ACCOUNT_STATUS";
   title: string;
   message: string;
   metadata?: Record<string, any>;
@@ -19,7 +19,7 @@ const NotificationSchema: Schema = new Schema({
   type: {
     type: String,
     required: true,
-    enum: ["UNMATCHED", "MATCHED", "REQUEST_RECEIVED", "PROFILE_REVEAL", "SYSTEM"],
+    enum: ["UNMATCHED", "MATCHED", "REQUEST_RECEIVED", "PROFILE_REVEAL", "SYSTEM", "VERIFIED", "ACCOUNT_STATUS"],
     default: "SYSTEM",
   },
   title: {

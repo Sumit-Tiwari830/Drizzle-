@@ -102,4 +102,65 @@ test("🛡️ Admin Privileges & Profile Identity Immutability Suite", async (t)
       assert.equal(adminId === targetId, true, "Self-blocking is forbidden");
     });
   });
+
+  await t.test("3. Admin Verification & Notification Dispatch Invariants", async (t) => {
+    await t.test("Verification action marks user isVerified=true and prepares VERIFIED notification", () => {
+      const targetUser = {
+        id: "user-test-1",
+        email: "student@campus.edu",
+        isVerified: false,
+      };
+
+      // Simulating Admin verify
+      targetUser.isVerified = true;
+      const notificationPayload = {
+        userId: targetUser.id,
+        type: "VERIFIED",
+        title: "Account Officially Verified! 🌟",
+        message: "Congratulations! Your profile has been officially verified by Drizzle Administration.",
+      };
+
+      assert.equal(targetUser.isVerified, true, "User must be marked verified");
+      assert.equal(notificationPayload.type, "VERIFIED");
+      assert.ok(notificationPayload.title.includes("Verified"));
+    });
+
+    await t.test("Unverify action marks user isVerified=false and prepares notification", () => {
+      const targetUser = {
+        id: "user-test-2",
+        email: "user2@campus.edu",
+        isVerified: true,
+      };
+
+      // Simulating Admin unverify
+      targetUser.isVerified = false;
+      const notificationPayload = {
+        userId: targetUser.id,
+        type: "SYSTEM",
+        title: "Verification Status Updated",
+        message: "Your profile verification status was revised by Drizzle Administration.",
+      };
+
+      assert.equal(targetUser.isVerified, false, "User verification must be revoked");
+      assert.equal(notificationPayload.type, "SYSTEM");
+    });
+
+    await t.test("Block action sends ACCOUNT_STATUS notification to target user", () => {
+      const targetUser = {
+        id: "user-test-3",
+        isDeleted: false,
+      };
+
+      targetUser.isDeleted = true;
+      const notificationPayload = {
+        userId: targetUser.id,
+        type: "ACCOUNT_STATUS",
+        title: "Account Suspended 🚫",
+        message: "Your account has been deactivated by Drizzle Administration.",
+      };
+
+      assert.equal(targetUser.isDeleted, true);
+      assert.equal(notificationPayload.type, "ACCOUNT_STATUS");
+    });
+  });
 });

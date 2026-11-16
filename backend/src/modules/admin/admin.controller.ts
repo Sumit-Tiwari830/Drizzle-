@@ -36,9 +36,21 @@ export class AdminController {
     }
   }
 
+  static async unverifyUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const result = await AdminService.unverifyUser(id);
+      return sendResponse(res, 200, true, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getAllUsers(req: Request, res: Response, next: NextFunction) {
     try {
-      const list = await AdminService.getAllUsers();
+      const search = (req.query.search as string) || undefined;
+      const filter = (req.query.filter as string) || undefined;
+      const list = await AdminService.getAllUsers(search, filter);
       return sendResponse(res, 200, true, "All users retrieved successfully", list);
     } catch (error) {
       next(error);

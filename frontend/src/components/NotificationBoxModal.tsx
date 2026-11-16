@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../constants/theme";
 import { useNotificationStore } from "../stores/notificationStore";
+import { showAlert } from "../stores/alertStore";
 import { AppNotification } from "../types";
 
 interface NotificationBoxModalProps {
@@ -64,6 +65,10 @@ export const NotificationBoxModal: React.FC<NotificationBoxModalProps> = ({
         return { name: "heart-dislike" as const, color: THEME.colors.danger, bg: THEME.colors.danger + "15" };
       case "PROFILE_REVEAL":
         return { name: "eye" as const, color: THEME.colors.cyan, bg: THEME.colors.cyanLight + "40" };
+      case "VERIFIED":
+        return { name: "checkmark-circle" as const, color: THEME.colors.success, bg: THEME.colors.success + "20" };
+      case "ACCOUNT_STATUS":
+        return { name: "alert-circle" as const, color: THEME.colors.danger, bg: THEME.colors.danger + "15" };
       default:
         return { name: "notifications" as const, color: THEME.colors.warning, bg: THEME.colors.warning + "20" };
     }
@@ -91,6 +96,14 @@ export const NotificationBoxModal: React.FC<NotificationBoxModalProps> = ({
         onPress={() => {
           if (!item.isRead) {
             markAsRead(item._id);
+          }
+          if (item.type === "VERIFIED") {
+            showAlert({
+              type: "success",
+              title: item.title || "Account Verified! 🌟",
+              message: item.message || "Your profile credentials have been officially verified by Drizzle Administration.",
+              buttonText: "OK, Awesome!",
+            });
           }
         }}
         activeOpacity={0.8}

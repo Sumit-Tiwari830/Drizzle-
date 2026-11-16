@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import { db } from "../../db/index.js";
 import { masterDirectory, users, profiles, requests, matches, otps, userDevices } from "../../db/schema/index.js";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, ilike, SQL } from "drizzle-orm";
 import { ApiError } from "../../utils/apiError.js";
 import { Message } from "../../db/msg_schema.js";
 import { NotificationService } from "../notifications/notification.service.js";
@@ -77,6 +77,14 @@ export class AdminService {
           .update(profiles)
           .set({ actualName, gender: officialGender })
           .where(eq(profiles.userId, registeredUser.id));
+
+        await NotificationService.createNotification(
+          registeredUser.id,
+          "VERIFIED",
+          "Account Officially Verified! 🌟",
+          "Congratulations! Your profile has been verified via the official master directory.",
+          { verifiedAt: new Date().toISOString(), source: "EXCEL_MASTER_UPLOAD" }
+        );
       }
     }
 
@@ -157,14 +165,78 @@ export class AdminService {
     // Mark user as verified
     await db.update(users).set({ isVerified: true }).where(eq(users.id, userId));
 
+    // Send real-time verification notification
+    await NotificationService.createNotification(
+      userId,
+      "VERIFIED",
+      "Account Officially Verified! 🌟",
+      "Congratulations! Your profile has been officially verified by Drizzle Administration. Your verified badge is now active.",
+      { verifiedAt: new Date().toISOString() }
+    );
+
     return { message: "User successfully verified and added to master directory" };
   }
 
   /**
-   * Get all users in the system (with profile & match lock status)
+   * Revoke verification status
    */
-  static async getAllUsers() {
-    return db
+  static async unverifyUser(userId: string) {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.isDeleted, false)))
+      .limit(1);
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    await db.update(users).set({ isVerified: false }).where(eq(users.id, userId));
+
+    await NotificationService.createNotification(
+      userId,
+      "SYSTEM",
+      "Verification Status Updated",
+      "Your profile verification status was revised by Drizzle Administration.",
+      { isVerified: false }
+    );
+
+    return { message: `Verification revoked for ${user.email}` };
+  }
+
+  /**
+   * Get all users in the system with optional search and filter
+   */
+  static async getAllUsers(search?: string, filter?: string) {
+    const conditions: SQL[] = [];
+
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      conditions.push(
+        or(
+          ilike(users.email, term),
+          ilike(profiles.username, term),
+          ilike(profiles.actualName, term)
+        )!
+      );
+    }
+
+    if (filter) {
+      const upperFilter = filter.toUpperCase();
+      if (upperFilter === "UNVERIFIED") {
+        conditions.push(and(eq(users.isVerified, false), eq(users.isDeleted, false))!);
+      } else if (upperFilter === "VERIFIED") {
+        conditions.push(and(eq(users.isVerified, true), eq(users.isDeleted, false))!);
+      } else if (upperFilter === "BLOCKED") {
+        conditions.push(eq(users.isDeleted, true));
+      } else if (upperFilter === "ACTIVE") {
+        conditions.push(eq(users.isDeleted, false));
+      } else if (upperFilter === "LOCKED") {
+        conditions.push(and(eq(users.isLocked, true), eq(users.isDeleted, false))!);
+      }
+    }
+
+    const query = db
       .select({
         id: users.id,
         email: users.email,
@@ -182,10 +254,16 @@ export class AdminService {
         height: profiles.height,
         region: profiles.region,
         city: profiles.city,
+        avatarUrl: profiles.avatarUrl,
       })
       .from(users)
-      .leftJoin(profiles, eq(users.id, profiles.userId))
-      .orderBy(desc(users.createdAt));
+      .leftJoin(profiles, eq(users.id, profiles.userId));
+
+    if (conditions.length > 0) {
+      return query.where(and(...conditions)).orderBy(desc(users.createdAt));
+    }
+
+    return query.orderBy(desc(users.createdAt));
   }
 
   /**
@@ -256,6 +334,15 @@ export class AdminService {
       .set({ isDeleted: true, deletedAt: new Date(), isLocked: false })
       .where(eq(users.id, targetUserId));
 
+    // 4. Send account status notification to target user
+    await NotificationService.createNotification(
+      targetUserId,
+      "ACCOUNT_STATUS",
+      "Account Suspended 🚫",
+      "Your account has been deactivated by Drizzle Administration. Please contact support if you believe this was an error.",
+      { isDeleted: true }
+    );
+
     return { message: `User ${user.email} has been successfully blocked/deactivated.` };
   }
 
@@ -272,6 +359,14 @@ export class AdminService {
       .update(users)
       .set({ isDeleted: false, deletedAt: null })
       .where(eq(users.id, targetUserId));
+
+    await NotificationService.createNotification(
+      targetUserId,
+      "ACCOUNT_STATUS",
+      "Account Reactivated ✅",
+      "Your account has been reactivated by Drizzle Administration. Welcome back!",
+      { isDeleted: false }
+    );
 
     return { message: `User ${user.email} has been reactivated.` };
   }

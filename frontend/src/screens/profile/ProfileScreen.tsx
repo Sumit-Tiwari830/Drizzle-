@@ -240,6 +240,31 @@ export const ProfileScreen = ({ navigation }: any) => {
       <AppHeader title="My Profile" showRulesButton={false} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Admin Console Entry Banner */}
+        {user?.role === "ADMIN" && (
+          <TouchableOpacity
+            style={styles.adminConsoleCard}
+            onPress={() => navigation.navigate("AdminDashboard")}
+            activeOpacity={0.85}
+          >
+            <View style={styles.adminConsoleIconWrap}>
+              <Ionicons name="shield-checkmark" size={24} color="#FFFFFF" />
+            </View>
+            <View style={styles.adminConsoleTextWrap}>
+              <View style={styles.adminConsoleBadgeRow}>
+                <Text style={styles.adminConsoleTitle}>Admin Console</Text>
+                <View style={styles.adminPill}>
+                  <Text style={styles.adminPillText}>STAFF</Text>
+                </View>
+              </View>
+              <Text style={styles.adminConsoleSubtitle}>
+                Search all users, manual verification, bulk Excel sheet upload, and safety controls.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={THEME.colors.primaryDark} />
+          </TouchableOpacity>
+        )}
+
         {/* Profile Card Header */}
         <View style={styles.profileCard}>
           <Image
@@ -1032,5 +1057,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  adminConsoleCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FDF4FF",
+    borderWidth: 1.5,
+    borderColor: THEME.colors.secondary + "40",
+    borderRadius: THEME.borderRadius.lg,
+    padding: 14,
+    marginBottom: 16,
+    gap: 12,
+  },
+  adminConsoleIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: THEME.colors.primaryDark,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  adminConsoleTextWrap: {
+    flex: 1,
+  },
+  adminConsoleBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 2,
+  },
+  adminConsoleTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: THEME.colors.textPrimary,
+  },
+  adminPill: {
+    backgroundColor: THEME.colors.secondary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  adminPillText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  adminConsoleSubtitle: {
+    fontSize: 11,
+    color: THEME.colors.textSecondary,
+    lineHeight: 16,
   },
 });

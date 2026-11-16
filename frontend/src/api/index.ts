@@ -159,9 +159,28 @@ export const pushApi = {
 // 8. Admin Management
 // ==========================================
 export const adminApi = {
-  getAllUsers: async () => {
-    const res = await apiClient.get("/admin/users");
+  getAllUsers: async (search?: string, filter?: string) => {
+    const params: Record<string, string> = {};
+    if (search) params.search = search;
+    if (filter && filter !== "ALL") params.filter = filter;
+    const res = await apiClient.get("/admin/users", { params });
     return res.data.data;
+  },
+  uploadMasterSheet: async (formData: FormData) => {
+    const res = await apiClient.post("/admin/upload-master-sheet", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  },
+  verifyUser: async (userId: string) => {
+    const res = await apiClient.post(`/admin/verify-user/${userId}`);
+    return res.data;
+  },
+  unverifyUser: async (userId: string) => {
+    const res = await apiClient.post(`/admin/unverify-user/${userId}`);
+    return res.data;
   },
   blockUser: async (userId: string) => {
     const res = await apiClient.patch(`/admin/users/${userId}/block`);
@@ -173,10 +192,6 @@ export const adminApi = {
   },
   removeUser: async (userId: string) => {
     const res = await apiClient.delete(`/admin/users/${userId}`);
-    return res.data;
-  },
-  verifyUser: async (userId: string) => {
-    const res = await apiClient.post(`/admin/verify-user/${userId}`);
     return res.data;
   },
 };
