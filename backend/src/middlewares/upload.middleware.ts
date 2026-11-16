@@ -9,7 +9,7 @@ const storage = multer.memoryStorage();
 export const uploadExcel = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     if (
       file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
       file.mimetype === "application/vnd.ms-excel" ||
@@ -30,7 +30,7 @@ export const uploadExcel = multer({
 export const uploadImage = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max per photo
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
     if (allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
       cb(null, true);
