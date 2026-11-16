@@ -180,3 +180,33 @@ export const adminApi = {
     return res.data;
   },
 };
+
+// ==========================================
+// 9. Notification Box
+// ==========================================
+export const notificationApi = {
+  getNotifications: async (page: number = 1, limit: number = 20) => {
+    const res = await apiClient.get(`/notifications?page=${page}&limit=${limit}`);
+    return res.data.data;
+  },
+
+  getUnreadCount: async (): Promise<number> => {
+    const res = await apiClient.get("/notifications/unread-count");
+    return res.data.data.unreadCount;
+  },
+
+  markAsRead: async (id: string) => {
+    const res = await apiClient.put(`/notifications/${id}/read`);
+    return res.data.data;
+  },
+
+  markAllAsRead: async () => {
+    const res = await apiClient.put("/notifications/mark-all-read");
+    return res.data;
+  },
+
+  deleteNotification: async (id: string) => {
+    const res = await apiClient.delete(`/notifications/${id}`);
+    return res.data;
+  },
+};

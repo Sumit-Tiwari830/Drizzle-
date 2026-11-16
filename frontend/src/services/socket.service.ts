@@ -54,6 +54,12 @@ class SocketService {
     }
   }
 
+  joinUserRoom(userId: string) {
+    if (this.socket?.connected) {
+      this.socket.emit("join_user", userId);
+    }
+  }
+
   leaveMatch(matchId: string) {
     if (this.socket?.connected) {
       this.socket.emit("leave_match", matchId);
@@ -102,11 +108,16 @@ class SocketService {
     this.socket?.on("match_ended", callback);
   }
 
+  onNewNotification(callback: (notification: any) => void) {
+    this.socket?.on("new_notification", callback);
+  }
+
   removeListeners() {
     this.socket?.off("new_message");
     this.socket?.off("partner_typing");
     this.socket?.off("messages_read");
     this.socket?.off("match_ended");
+    this.socket?.off("new_notification");
   }
 }
 

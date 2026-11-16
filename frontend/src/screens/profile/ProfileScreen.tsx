@@ -18,16 +18,20 @@ import { THEME } from "../../constants/theme";
 import { AppHeader } from "../../components/AppHeader";
 import { RulesModal } from "../../components/RulesModal";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { NotificationBoxModal } from "../../components/NotificationBoxModal";
 import { profileApi } from "../../api";
 import { useAuthStore } from "../../stores/authStore";
+import { useNotificationStore } from "../../stores/notificationStore";
 
 export const ProfileScreen = ({ navigation }: any) => {
   const profile = useAuthStore((s) => s.profile);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   const [rulesVisible, setRulesVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   // Confirmation Modals State
@@ -327,6 +331,26 @@ export const ProfileScreen = ({ navigation }: any) => {
           </View>
         </View>
 
+        {/* Notification Box Link */}
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => setNotificationsVisible(true)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.menuLeft}>
+            <Ionicons name="notifications-outline" size={20} color={THEME.colors.primary} />
+            <Text style={styles.menuTitle}>Notification Box</Text>
+          </View>
+          <View style={styles.menuRight}>
+            {unreadCount > 0 && (
+              <View style={styles.menuBadge}>
+                <Text style={styles.menuBadgeText}>{unreadCount}</Text>
+              </View>
+            )}
+            <Ionicons name="chevron-forward" size={18} color={THEME.colors.textMuted} />
+          </View>
+        </TouchableOpacity>
+
         {/* App Rules Link */}
         <TouchableOpacity
           style={styles.menuRow}
@@ -369,6 +393,12 @@ export const ProfileScreen = ({ navigation }: any) => {
 
       {/* Rules Modal */}
       <RulesModal visible={rulesVisible} onClose={() => setRulesVisible(false)} />
+
+      {/* Notification Box Modal */}
+      <NotificationBoxModal
+        visible={notificationsVisible}
+        onClose={() => setNotificationsVisible(false)}
+      />
 
       {/* Sign Out Confirmation Modal */}
       <ConfirmationModal
@@ -772,6 +802,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.textPrimary,
+  },
+  menuRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  menuBadge: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  menuBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
   },
   logoutButton: {
     flexDirection: "row",

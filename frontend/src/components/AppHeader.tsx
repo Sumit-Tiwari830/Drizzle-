@@ -1,21 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../constants/theme";
 import { RulesModal } from "./RulesModal";
+import { NotificationBoxModal } from "./NotificationBoxModal";
+import { useNotificationStore } from "../stores/notificationStore";
 
 interface AppHeaderProps {
   title?: string;
   quotaRemaining?: number;
   showRulesButton?: boolean;
+  showNotificationButton?: boolean;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   quotaRemaining,
   showRulesButton = true,
+  showNotificationButton = true,
 }) => {
   const [rulesVisible, setRulesVisible] = useState(false);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   return (
     <View style={styles.container}>
@@ -55,9 +66,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Text style={styles.rulesButtonText}>Rules</Text>
           </TouchableOpacity>
         )}
+
+        {showNotificationButton && (
+          <TouchableOpacity
+            style={styles.bellButton}
+            onPress={() => setNotificationsVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="notifications-outline" size={20} color={THEME.colors.textPrimary} />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       <RulesModal visible={rulesVisible} onClose={() => setRulesVisible(false)} />
+      <NotificationBoxModal
+        visible={notificationsVisible}
+        onClose={() => setNotificationsVisible(false)}
+      />
     </View>
   );
 };
@@ -131,5 +161,35 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: THEME.colors.textPrimary,
     letterSpacing: 0.3,
+  },
+  bellButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: THEME.colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    backgroundColor: THEME.colors.primary,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: THEME.colors.surface,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
   },
 });

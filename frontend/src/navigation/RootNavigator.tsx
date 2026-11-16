@@ -8,12 +8,16 @@ import { OnboardingScreen } from "../screens/onboarding/OnboardingScreen";
 import { ChatScreen } from "../screens/match/ChatScreen";
 import { MainTabs } from "./MainTabs";
 import { useAuthStore } from "../stores/authStore";
+import { useNotificationStore } from "../stores/notificationStore";
+import { socketService } from "../services/socket.service";
+import { storage } from "../utils/storage";
 import { THEME } from "../constants/theme";
 
 const Stack = createNativeStackNavigator();
 
 export const RootNavigator = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
   const checkSession = useAuthStore((s) => s.checkSession);
@@ -21,6 +25,20 @@ export const RootNavigator = () => {
   useEffect(() => {
     checkSession();
   }, [checkSession]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      storage.getItemAsync("token").then((token) => {
+        if (token && token !== "undefined" && token !== "null") {
+          socketService.connect(token);
+          socketService.joinUserRoom(user.id);
+          socketService.onNewNotification((notif) => {
+            useNotificationStore.getState().addNotification(notif);
+          });
+        }
+      });
+    }
+  }, [isAuthenticated, user?.id]);
 
   if (isLoading) {
     return (

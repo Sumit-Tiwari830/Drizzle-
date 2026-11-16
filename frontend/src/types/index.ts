@@ -96,3 +96,14 @@ export interface AppRule {
   icon: string; // Ionicons / MaterialIcons name
   color: string;
 }
+
+export interface AppNotification {
+  _id: string;
+  userId: string;
+  type: "UNMATCHED" | "MATCHED" | "REQUEST_RECEIVED" | "PROFILE_REVEAL" | "SYSTEM";
+  title: string;
+  message: string;
+  metadata?: Record<string, any>;
+  isRead: boolean;
+  createdAt: string;
+}
