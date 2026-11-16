@@ -283,7 +283,7 @@ export class AdminService {
     }
 
     if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
-      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
+      throw new ApiError(400, "Master Admin is already root administrator");
     }
 
     if (user.role === "ADMIN" || user.role === "MASTER_ADMIN") {
@@ -317,10 +317,6 @@ export class AdminService {
     const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
     if (!user) {
       throw new ApiError(404, "User not found");
-    }
-
-    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
-      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
     }
 
     if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
@@ -358,10 +354,6 @@ export class AdminService {
     const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
     if (!user) {
       throw new ApiError(404, "User not found");
-    }
-
-    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
-      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
     }
 
     if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
@@ -439,10 +431,6 @@ export class AdminService {
     const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
     if (!user) {
       throw new ApiError(404, "User not found");
-    }
-
-    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
-      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
     }
 
     await db

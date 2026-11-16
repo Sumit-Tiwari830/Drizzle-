@@ -82,7 +82,7 @@ export class EmailService {
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">✨ Spark Dating</div>
+          <div class="logo">Drizzle</div>
           <h1>${details.heading}</h1>
           <p>${details.subheading}</p>
         </div>
@@ -96,7 +96,7 @@ export class EmailService {
         </div>
 
         <div class="footer">
-          &copy; ${new Date().getFullYear()} Spark Dating Inc. All rights reserved.<br>
+          &copy; ${new Date().getFullYear()} Drizzle Dating Inc. All rights reserved.<br>
           This is an automated security transmission. Please do not reply directly to this email.
         </div>
       </div>

@@ -219,6 +219,17 @@ export const ProfileScreen = ({ navigation }: any) => {
   };
 
   const handleConfirmDeleteAccount = async () => {
+    if (user?.email?.toLowerCase() === "kiransumit2231@gmail.com") {
+      showAlert({
+        type: "error",
+        title: "Action Forbidden",
+        message: "The Master Admin account is permanent and cannot be deleted.",
+        buttonText: "OK",
+      });
+      setShowDeleteAccountModal(false);
+      return;
+    }
+
     try {
       setModalLoading(true);
       await profileApi.deleteAccount();
@@ -241,7 +252,7 @@ export const ProfileScreen = ({ navigation }: any) => {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Admin Console Entry Banner */}
-        {user?.role === "ADMIN" && (
+        {(user?.role === "ADMIN" || user?.role === "MASTER_ADMIN" || user?.email?.toLowerCase() === "kiransumit2231@gmail.com") && (
           <TouchableOpacity
             style={styles.adminConsoleCard}
             onPress={() => navigation.navigate("AdminDashboard")}
@@ -253,12 +264,16 @@ export const ProfileScreen = ({ navigation }: any) => {
             <View style={styles.adminConsoleTextWrap}>
               <View style={styles.adminConsoleBadgeRow}>
                 <Text style={styles.adminConsoleTitle}>Admin Console</Text>
-                <View style={styles.adminPill}>
-                  <Text style={styles.adminPillText}>STAFF</Text>
+                <View style={[styles.adminPill, user?.email?.toLowerCase() === "kiransumit2231@gmail.com" && { backgroundColor: "#D97706" }]}>
+                  <Text style={styles.adminPillText}>
+                    {user?.email?.toLowerCase() === "kiransumit2231@gmail.com" ? "MASTER" : "STAFF"}
+                  </Text>
                 </View>
               </View>
               <Text style={styles.adminConsoleSubtitle}>
-                Search all users, manual verification, bulk Excel sheet upload, and safety controls.
+                {user?.email?.toLowerCase() === "kiransumit2231@gmail.com"
+                  ? "Root administrator authority: appoint/revoke admins, bulk Excel verification, and safety controls."
+                  : "Search all users, manual verification, bulk Excel sheet upload, and safety controls."}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={THEME.colors.primaryDark} />
@@ -450,20 +465,32 @@ export const ProfileScreen = ({ navigation }: any) => {
         </TouchableOpacity>
 
         {/* Danger Zone: Delete Account */}
-        <View style={styles.dangerZone}>
-          <Text style={styles.dangerTitle}>Danger Zone</Text>
-          <Text style={styles.dangerDesc}>
-            Permanently delete your profile and account. If you are currently matched, your match will be dissolved and your partner will be unlocked.
-          </Text>
-          <TouchableOpacity
-            style={styles.deleteAccountButton}
-            onPress={() => setShowDeleteAccountModal(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="trash-outline" size={16} color={THEME.colors.danger} />
-            <Text style={styles.deleteAccountButtonText}>Delete My Account</Text>
-          </TouchableOpacity>
-        </View>
+        {user?.email?.toLowerCase() === "kiransumit2231@gmail.com" ? (
+          <View style={[styles.dangerZone, { borderColor: "#F59E0B", backgroundColor: "#FFFBEB" }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Ionicons name="shield-checkmark" size={16} color="#D97706" />
+              <Text style={[styles.dangerTitle, { color: "#92400E" }]}>Root Master Administrator Account</Text>
+            </View>
+            <Text style={[styles.dangerDesc, { color: "#B45309" }]}>
+              This is the permanent root administrator account (kiransumit2231@gmail.com). Account deletion and deactivation are strictly disabled to preserve system integrity.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.dangerZone}>
+            <Text style={styles.dangerTitle}>Danger Zone</Text>
+            <Text style={styles.dangerDesc}>
+              Permanently delete your profile and account. If you are currently matched, your match will be dissolved and your partner will be unlocked.
+            </Text>
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={() => setShowDeleteAccountModal(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={16} color={THEME.colors.danger} />
+              <Text style={styles.deleteAccountButtonText}>Delete My Account</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {/* Rules Modal */}

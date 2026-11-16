@@ -388,6 +388,16 @@ export class AuthService {
    * - DOES NOT touch or delete the record from master_directory!
    */
   static async deleteAccount(userId: string) {
+    // 0. Protect Master Admin from deletion
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user) {
+      throw new ApiError(404, "User account not found");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com" || user.role === "MASTER_ADMIN") {
+      throw new ApiError(403, "Master Admin account is permanent and cannot be deleted or deactivated.");
+    }
+
     // 1. Check if user is in an active match and release the partner
     const [activeMatch] = await db
       .select()

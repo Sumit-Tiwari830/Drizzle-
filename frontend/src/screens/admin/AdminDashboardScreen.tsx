@@ -362,9 +362,13 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
               <Image source={{ uri: item.avatarUrl }} style={styles.avatarImage} />
             ) : (
               <View style={[styles.avatarPlaceholder, { backgroundColor: isTargetMasterAdmin ? "#FEF3C7" : THEME.colors.primaryLight + "30" }]}>
-                <Text style={[styles.avatarInitial, isTargetMasterAdmin && { color: "#D97706" }]}>
-                  {isTargetMasterAdmin ? "👑" : (item.username || item.email || "U").charAt(0).toUpperCase()}
-                </Text>
+                {isTargetMasterAdmin ? (
+                  <Ionicons name="shield-checkmark" size={20} color="#D97706" />
+                ) : (
+                  <Text style={styles.avatarInitial}>
+                    {(item.username || item.email || "U").charAt(0).toUpperCase()}
+                  </Text>
+                )}
               </View>
             )}
 
@@ -375,7 +379,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
                 </Text>
                 {isTargetMasterAdmin ? (
                   <View style={styles.masterAdminBadge}>
-                    <Ionicons name="sparkles" size={10} color="#92400E" />
+                    <Ionicons name="shield-checkmark" size={11} color="#92400E" />
                     <Text style={styles.masterAdminBadgeText}>MASTER ADMIN</Text>
                   </View>
                 ) : isTargetAdmin ? (

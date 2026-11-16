@@ -47,9 +47,9 @@ export const IcebreakerBanner: React.FC<IcebreakerBannerProps> = ({
   if (hasIcebreakerBeenSent) {
     return (
       <View style={[styles.container, styles.sentContainer]}>
-        <Ionicons name="sparkles" size={18} color={THEME.colors.primary} />
+        <Ionicons name="chatbubbles" size={18} color={THEME.colors.success} />
         <View style={styles.textContainer}>
-          <Text style={styles.sentTitle}>The Ice is Broken! ✨</Text>
+          <Text style={styles.sentTitle}>The Ice is Broken!</Text>
           <Text style={styles.sentSubtitle}>Enjoy taking your time to get to know each other.</Text>
         </View>
       </View>
