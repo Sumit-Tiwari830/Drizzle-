@@ -100,7 +100,7 @@ export const NotificationBoxModal: React.FC<NotificationBoxModalProps> = ({
           if (item.type === "VERIFIED") {
             showAlert({
               type: "success",
-              title: item.title || "Account Verified! 🌟",
+              title: item.title || "Account Verified! ✅",
               message: item.message || "Your profile credentials have been officially verified by Drizzle Administration.",
               buttonText: "OK, Awesome!",
             });

@@ -81,7 +81,7 @@ export class AdminService {
         await NotificationService.createNotification(
           registeredUser.id,
           "VERIFIED",
-          "Account Officially Verified! 🌟",
+          "Account Officially Verified! ✅",
           "Congratulations! Your profile has been verified via the official master directory.",
           { verifiedAt: new Date().toISOString(), source: "EXCEL_MASTER_UPLOAD" }
         );
@@ -169,7 +169,7 @@ export class AdminService {
     await NotificationService.createNotification(
       userId,
       "VERIFIED",
-      "Account Officially Verified! 🌟",
+      "Account Officially Verified! ✅",
       "Congratulations! Your profile has been officially verified by Drizzle Administration. Your verified badge is now active.",
       { verifiedAt: new Date().toISOString() }
     );
@@ -178,7 +178,7 @@ export class AdminService {
   }
 
   /**
-   * Revoke verification status
+   * Revoke / revert verification status (All admins possess this power)
    */
   static async unverifyUser(userId: string) {
     const [user] = await db
@@ -191,17 +191,26 @@ export class AdminService {
       throw new ApiError(404, "User not found");
     }
 
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin verification cannot be revoked");
+    }
+
     await db.update(users).set({ isVerified: false }).where(eq(users.id, userId));
+
+    // Remove manual admin entry from masterDirectory if present
+    await db
+      .delete(masterDirectory)
+      .where(and(eq(masterDirectory.email, user.email), eq(masterDirectory.verifiedByAdmin, true)));
 
     await NotificationService.createNotification(
       userId,
       "SYSTEM",
-      "Verification Status Updated",
-      "Your profile verification status was revised by Drizzle Administration.",
+      "Verification Status Reverted",
+      "Your profile verification status was reverted to unverified by Drizzle Administration.",
       { isVerified: false }
     );
 
-    return { message: `Verification revoked for ${user.email}` };
+    return { message: `User ${user.email} successfully unverified` };
   }
 
   /**

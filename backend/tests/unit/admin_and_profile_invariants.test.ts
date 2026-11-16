@@ -116,7 +116,7 @@ test("🛡️ Admin Privileges & Profile Identity Immutability Suite", async (t)
       const notificationPayload = {
         userId: targetUser.id,
         type: "VERIFIED",
-        title: "Account Officially Verified! 🌟",
+        title: "Account Officially Verified! ✅",
         message: "Congratulations! Your profile has been officially verified by Drizzle Administration.",
       };
 

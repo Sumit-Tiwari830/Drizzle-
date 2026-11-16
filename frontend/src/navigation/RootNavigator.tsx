@@ -44,7 +44,7 @@ export const RootNavigator = () => {
             if (notif.type === "VERIFIED") {
               showAlert({
                 type: "success",
-                title: notif.title || "Account Verified! 🌟",
+                title: notif.title || "Account Verified! ✅",
                 message: notif.message || "Your profile credentials have been officially verified by Drizzle Administration.",
                 buttonText: "Awesome!",
               });

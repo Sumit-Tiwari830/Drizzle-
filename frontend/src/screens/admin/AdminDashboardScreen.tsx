@@ -103,7 +103,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
       await adminApi.verifyUser(user.id);
       showAlert({
         type: "success",
-        title: "User Verified! 🌟",
+        title: "User Verified! ✅",
         message: `${user.username || user.email} has been verified and added to the official Master Directory. A verification notification was dispatched.`,
         buttonText: "OK",
       });
@@ -118,24 +118,34 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleUnverify = async (user: AdminUserItem) => {
-    try {
-      await adminApi.unverifyUser(user.id);
-      showAlert({
-        type: "warning",
-        title: "Verification Revoked",
-        message: `Official verification was removed for ${user.username || user.email}.`,
-        buttonText: "OK",
-      });
-      fetchUsers();
-    } catch (err: any) {
-      showAlert({
-        type: "error",
-        title: "Action Failed",
-        message: err.message || "Failed to revoke verification.",
-        buttonText: "Dismiss",
-      });
-    }
+  const promptUnverify = (user: AdminUserItem) => {
+    setConfirmTitle("Unverify User?");
+    setConfirmMessage(
+      `Are you sure you want to revert ${user.username || user.email} to Unverified status? If this user was verified mistakenly, their verified badge and privileges will be removed.`
+    );
+    setConfirmButtonText("Unverify User");
+    setConfirmIsDestructive(true);
+    setConfirmIcon("close-circle-outline");
+    setConfirmAction(() => async () => {
+      try {
+        await adminApi.unverifyUser(user.id);
+        showAlert({
+          type: "warning",
+          title: "User Unverified",
+          message: `${user.username || user.email} has been reverted to unverified status.`,
+          buttonText: "OK",
+        });
+        fetchUsers();
+      } catch (err: any) {
+        showAlert({
+          type: "error",
+          title: "Action Failed",
+          message: err.message || "Failed to unverify user.",
+          buttonText: "Dismiss",
+        });
+      }
+    });
+    setConfirmModalVisible(true);
   };
 
   const promptBlock = (user: AdminUserItem) => {
@@ -362,13 +372,9 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
               <Image source={{ uri: item.avatarUrl }} style={styles.avatarImage} />
             ) : (
               <View style={[styles.avatarPlaceholder, { backgroundColor: isTargetMasterAdmin ? "#FEF3C7" : THEME.colors.primaryLight + "30" }]}>
-                {isTargetMasterAdmin ? (
-                  <Ionicons name="shield-checkmark" size={20} color="#D97706" />
-                ) : (
-                  <Text style={styles.avatarInitial}>
-                    {(item.username || item.email || "U").charAt(0).toUpperCase()}
-                  </Text>
-                )}
+                <Text style={[styles.avatarInitial, isTargetMasterAdmin && { color: "#92400E" }]}>
+                  {(item.username || item.email || "U").charAt(0).toUpperCase()}
+                </Text>
               </View>
             )}
 
@@ -379,7 +385,6 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
                 </Text>
                 {isTargetMasterAdmin ? (
                   <View style={styles.masterAdminBadge}>
-                    <Ionicons name="shield-checkmark" size={11} color="#92400E" />
                     <Text style={styles.masterAdminBadgeText}>MASTER ADMIN</Text>
                   </View>
                 ) : isTargetAdmin ? (
@@ -487,11 +492,11 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
                     ) : (
                       <TouchableOpacity
                         style={[styles.actionBtn, styles.unverifyBtn]}
-                        onPress={() => handleUnverify(item)}
+                        onPress={() => promptUnverify(item)}
                         activeOpacity={0.8}
                       >
-                        <Ionicons name="close-circle-outline" size={16} color={THEME.colors.textMuted} />
-                        <Text style={styles.unverifyBtnText}>Revoke</Text>
+                        <Ionicons name="close-circle-outline" size={16} color={THEME.colors.warning} />
+                        <Text style={styles.unverifyBtnText}>Unverify</Text>
                       </TouchableOpacity>
                     )}
                   </>
@@ -1243,20 +1248,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFBEB",
   },
   masterAdminBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
     backgroundColor: "#FEF3C7",
     paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: "#F59E0B",
+    alignSelf: "center",
   },
   masterAdminBadgeText: {
     fontSize: 9,
     fontWeight: "900",
     color: "#92400E",
+    letterSpacing: 0.5,
   },
   masterProtectedWrap: {
     flexDirection: "row",

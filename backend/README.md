@@ -4,7 +4,7 @@ A production-ready dating application backend built with **TypeScript**, **Expre
 
 ---
 
-## 🌟 Core Business Rules & Features Implemented
+## Core Business Rules & Features Implemented
 
 ### 1. Unified Single Server Architecture (Port 5000)
 - **Eliminated Dual Entry Points**: Previously separated `server.ts` (REST on port 5000) and `stream.ts` (Chat on port 3000) have been cleanly unified into **`src/server.ts`**.
