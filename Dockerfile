@@ -1,28 +1,28 @@
-# -----------------------------------
-# Stage 1: Build Stage
-# -----------------------------------
+# Multi-stage TypeScript Dockerfile for Dating App Backend
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy package files from backend folder (Corrected path)
 COPY backend/package*.json ./
-RUN npm install
+RUN npm ci
 
-# Copy all source code from backend folder (Corrected path)
-COPY backend/ .
+COPY backend/tsconfig.json ./
+COPY backend/drizzle.config.ts ./
+COPY backend/src ./src
+
 RUN npm run build
 
-# -----------------------------------
-# Stage 2: Production Stage
-# -----------------------------------
-FROM node:22-alpine
+# Production Runner Image
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Copy package files from backend folder
+ENV NODE_ENV=production
+
 COPY backend/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
-EXPOSE 3000
-CMD ["node", "dist/stream.js"]
+EXPOSE 5000
+
+CMD ["node", "dist/server.js"]
