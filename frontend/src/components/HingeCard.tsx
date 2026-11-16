@@ -198,8 +198,8 @@ export const HingeCard: React.FC<HingeCardProps> = ({
         onPress={() => handleOpenConnect()}
         activeOpacity={0.85}
       >
-        <Ionicons name="paper-plane" size={18} color="#FFF" />
-        <Text style={styles.connectButtonText}>Send Connect Request (48h TTL)</Text>
+        <Ionicons name="sparkles" size={17} color="#FFF" />
+        <Text style={styles.connectButtonText}>Send Connection Request</Text>
       </TouchableOpacity>
 
       {/* 7. Connect Note Modal */}
@@ -232,9 +232,9 @@ export const HingeCard: React.FC<HingeCardProps> = ({
             />
 
             <View style={styles.ruleNotice}>
-              <Ionicons name="hourglass-outline" size={14} color={THEME.colors.warning} />
+              <Ionicons name="time-outline" size={14} color={THEME.colors.primaryDark} />
               <Text style={styles.ruleNoticeText}>
-                Connect requests auto-expire in 48 hours. Consumes 1 of your {remainingQuota} daily requests.
+                Invitations remain open for 48 hours. Uses 1 of your {remainingQuota} invites today.
               </Text>
             </View>
 

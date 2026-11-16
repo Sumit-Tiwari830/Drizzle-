@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
@@ -56,12 +57,13 @@ export const LoginScreen = ({ navigation }: any) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="heart" size={32} color={THEME.colors.primary} />
-          </View>
-          <Text style={styles.title}>Welcome Back</Text>
+          <Image
+            source={require("../../../assets/drizzle-logo.png")}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
           <Text style={styles.subtitle}>
-            Sign in to continue your exclusive 1-to-1 connections.
+            Intentional 1-to-1 connections designed around genuine presence.
           </Text>
         </View>
 
@@ -133,16 +135,12 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: THEME.spacing.xl,
+    marginBottom: THEME.spacing.lg,
   },
-  iconCircle: {
-    width: 64,
+  brandLogo: {
+    width: 220,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: THEME.colors.primaryLight,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: THEME.spacing.md,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,

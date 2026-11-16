@@ -1,20 +1,23 @@
 export const THEME = {
   colors: {
-    primary: "#E11D48", // Vibrant rose (Hinge/Dating accent)
-    primaryLight: "#FFE4E6",
-    primaryDark: "#9F1239",
-    background: "#F8FAFC", // Clean slate/cream
+    primary: "#E11D48", // Vibrant rose-pink from the heart & arrow
+    primaryLight: "#FFE4E9", // Soft pastel rose
+    primaryDark: "#3B0764", // Deep royal purple from the "rizzle" wordmark
+    secondary: "#7C3AED", // Vivid violet from the gradient
+    secondaryLight: "#F3E8FF",
+    cyan: "#0284C7", // Cyan from the droplets
+    cyanLight: "#E0F2FE",
+    background: "#FDFBF7", // Soft warm ivory matching the official app icon background
     surface: "#FFFFFF",
-    surfaceSecondary: "#F1F5F9",
-    border: "#E2E8F0",
-    textPrimary: "#0F172A",
-    textSecondary: "#475569",
-    textMuted: "#94A3B8",
+    surfaceSecondary: "#F6F3EC", // Cream tinted neutral
+    border: "#E9E3D8", // Soft warm divider
+    textPrimary: "#261338", // Deep brand dark purple
+    textSecondary: "#5A4E66", // Sophisticated muted purple-slate
+    textMuted: "#9C92A6",
     success: "#10B981",
     warning: "#F59E0B",
     danger: "#EF4444",
-    purple: "#8B5CF6",
-    icebreaker: "#0284C7", // Cyan/Blue for Icebreaker timer
+    icebreaker: "#0284C7", // Cyan/blue icebreaker timer
   },
   spacing: {
     xs: 4,
@@ -25,8 +28,9 @@ export const THEME = {
   },
   borderRadius: {
     sm: 8,
-    md: 16,
-    lg: 24,
+    md: 14,
+    lg: 20,
+    xl: 28,
     full: 9999,
   },
 };

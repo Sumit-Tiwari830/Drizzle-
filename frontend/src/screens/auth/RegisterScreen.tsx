@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
@@ -59,12 +60,13 @@ export const RegisterScreen = ({ navigation }: any) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="sparkles" size={32} color={THEME.colors.primary} />
-          </View>
-          <Text style={styles.title}>Join Exclusive</Text>
+          <Image
+            source={require("../../../assets/drizzle-logo.png")}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
           <Text style={styles.subtitle}>
-            1-to-1 intentional dating. Verify your human identity and start connecting.
+            Create your account to start intentional, exclusive connections.
           </Text>
         </View>
 
@@ -116,9 +118,9 @@ export const RegisterScreen = ({ navigation }: any) => {
           </View>
 
           <View style={styles.ruleNote}>
-            <Ionicons name="checkmark-circle-outline" size={16} color={THEME.colors.success} />
+            <Ionicons name="shield-checkmark-outline" size={16} color={THEME.colors.primary} />
             <Text style={styles.ruleNoteText}>
-              Rule 7: Verified human community only. We'll send an email OTP to verify your account.
+              A genuine community: We'll send an email verification code to keep Drizzle authentic and safe.
             </Text>
           </View>
 
@@ -160,14 +162,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: THEME.spacing.lg,
   },
-  iconCircle: {
-    width: 64,
+  brandLogo: {
+    width: 220,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: THEME.colors.primaryLight,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: THEME.spacing.sm,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,

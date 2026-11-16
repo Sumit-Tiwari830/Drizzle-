@@ -1,74 +1,77 @@
-import { AppRule } from "../types";
+export interface CommunityRule {
+  id: string;
+  number: string;
+  title: string;
+  tagline: string;
+  description: string;
+  icon: string;
+}
 
-export const APP_RULES: AppRule[] = [
+export const COMMUNITY_RULES: CommunityRule[] = [
   {
     id: "exclusive_match",
-    title: "1-to-1 Exclusive Match",
-    subtitle: "No multi-dating or divided attention",
+    number: "01",
+    title: "1-to-1 Exclusive Connection",
+    tagline: "One meaningful conversation at a time",
     description:
-      "When you match with someone, both of your profiles are locked (isLocked = true). You cannot browse the feed, send new requests, or receive incoming requests. You focus entirely on one connection at a time.",
-    badge: "Exclusive",
-    icon: "lock-closed",
-    color: "#E11D48",
+      "When you match with someone, you share an exclusive space together. Your discovery feed pauses so you can give each other genuine, undivided attention.",
+    icon: "heart-outline",
   },
   {
     id: "icebreaker_48h",
-    title: "48-Hour 'First-Message' Icebreaker",
-    subtitle: "Rule 1: Say goodbye to ghosting deadlocks",
+    number: "02",
+    title: "The 48-Hour Icebreaker",
+    tagline: "Say hello and start the spark",
     description:
-      "Once matched, a 48-hour countdown timer begins. If no message is sent within 48 hours, the match automatically dissolves, both profiles are unlocked, and any messages are deleted so nobody gets stuck in limbo.",
-    badge: "Rule 1",
-    icon: "timer-outline",
-    color: "#0284C7",
+      "Once matched, take the initiative! If neither person sends a message within 48 hours, the match gently expires so neither of you is left waiting in limbo.",
+    icon: "chatbubble-ellipses-outline",
   },
   {
     id: "request_ttl_48h",
-    title: "48-Hour Request Expiry",
-    subtitle: "Fast decisions, no endless waiting",
+    number: "03",
+    title: "Thoughtful & Active Responses",
+    tagline: "No endless waiting",
     description:
-      "Connect requests expire in exactly 48 hours if unanswered. Furthermore, if a candidate gets matched with someone else before responding to your request, the request is cleanly cancelled.",
-    badge: "48H TTL",
+      "Connection requests remain open for 48 hours. If someone matches with another person in the meantime, requests are automatically closed so you can connect with active people.",
     icon: "hourglass-outline",
-    color: "#F59E0B",
   },
   {
     id: "daily_quota",
-    title: "24-Hour Rolling Quota (10 Requests)",
-    subtitle: "Quality over spam swiping",
+    number: "04",
+    title: "Mindful Matching (10 Invites / Day)",
+    tagline: "Intentional dating over mindless swiping",
     description:
-      "To encourage thoughtful, intentional dating, users are limited to 10 connect requests per rolling 24-hour period. Send requests to profiles you genuinely resonate with.",
-    badge: "10 / Day",
+      "You receive 10 curated invitations every rolling 24 hours. This keeps our community thoughtful and ensures every invite you send really counts.",
     icon: "sparkles-outline",
-    color: "#8B5CF6",
   },
   {
     id: "privacy_shield",
-    title: "Anonymity Shield & Mutual Reveal",
-    subtitle: "Connect based on substance first",
+    number: "05",
+    title: "Personality First, Mutual Reveal",
+    tagline: "Connect on substance before appearance",
     description:
-      "Profiles initially show avatars and blurred photos with verified stats (bio, interests, age, height). Only when BOTH of you tap 'Request Reveal' are full unmasked real photos and identity unlocked.",
-    badge: "Privacy",
+      "Profiles initially show verified details, prompts, and masked photos. When you feel a genuine spark, you can both mutually agree to reveal full photos and identities.",
     icon: "shield-checkmark-outline",
-    color: "#10B981",
   },
   {
     id: "instant_purge",
-    title: "Instant Chat Purge on Unmatch",
-    subtitle: "Zero residual digital footprints",
+    number: "06",
+    title: "Zero-Trace Privacy",
+    tagline: "Clean closures, complete peace of mind",
     description:
-      "If either partner taps 'Unmatch' or the icebreaker timer expires, all chat history is immediately and permanently wiped from the database. Both candidates are unlocked instantly.",
-    badge: "Zero-Trace",
-    icon: "trash-outline",
-    color: "#EF4444",
+      "If a connection isn't a fit, unmatching is clean and respectful. Your entire chat history is permanently removed with zero residual traces for both of you.",
+    icon: "lock-closed-outline",
   },
   {
     id: "verified_only",
-    title: "Verified Community Only",
-    subtitle: "100% human, zero bots",
+    number: "07",
+    title: "100% Verified Community",
+    tagline: "Real humans, zero bots",
     description:
-      "Email OTP verification is strictly required. Unverified accounts cannot view the discovery feed or send connect requests. Every profile you encounter is a verified human.",
-    badge: "Verified",
+      "Every profile on Drizzle is verified with email OTP authentication. You're always speaking to a verified, real person.",
     icon: "checkmark-circle-outline",
-    color: "#065F46",
   },
 ];
+
+// Compatibility alias
+export const APP_RULES = COMMUNITY_RULES;

@@ -47,10 +47,10 @@ export const IcebreakerBanner: React.FC<IcebreakerBannerProps> = ({
   if (hasIcebreakerBeenSent) {
     return (
       <View style={[styles.container, styles.sentContainer]}>
-        <Ionicons name="chatbubbles" size={18} color={THEME.colors.success} />
+        <Ionicons name="sparkles" size={18} color={THEME.colors.primary} />
         <View style={styles.textContainer}>
-          <Text style={styles.sentTitle}>Icebreaker Sent!</Text>
-          <Text style={styles.sentSubtitle}>48-Hour timer cleared. Focus on getting to know each other.</Text>
+          <Text style={styles.sentTitle}>The Ice is Broken! ✨</Text>
+          <Text style={styles.sentSubtitle}>Enjoy taking your time to get to know each other.</Text>
         </View>
       </View>
     );
@@ -64,11 +64,11 @@ export const IcebreakerBanner: React.FC<IcebreakerBannerProps> = ({
       onPress={onPressAction}
       activeOpacity={0.85}
     >
-      <View style={[styles.iconBox, { backgroundColor: isUrgent ? THEME.colors.danger + "20" : THEME.colors.icebreaker + "20" }]}>
+      <View style={[styles.iconBox, { backgroundColor: isUrgent ? THEME.colors.danger + "15" : THEME.colors.cyanLight }]}>
         <Ionicons
-          name="timer-outline"
-          size={22}
-          color={isUrgent ? THEME.colors.danger : THEME.colors.icebreaker}
+          name="chatbubble-ellipses-outline"
+          size={20}
+          color={isUrgent ? THEME.colors.danger : THEME.colors.cyan}
         />
       </View>
 
@@ -76,17 +76,17 @@ export const IcebreakerBanner: React.FC<IcebreakerBannerProps> = ({
         <View style={styles.headerRow}>
           <Text style={[styles.title, isUrgent && { color: THEME.colors.danger }]}>
             {timeLeft.isExpired
-              ? "Icebreaker Expired!"
-              : `Rule 1: ${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s Left`}
+              ? "Connection Expired"
+              : `${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s to say hello`}
           </Text>
-          <View style={[styles.badge, { backgroundColor: isUrgent ? THEME.colors.danger : THEME.colors.icebreaker }]}>
-            <Text style={styles.badgeText}>48H LIMIT</Text>
+          <View style={[styles.badge, { backgroundColor: isUrgent ? THEME.colors.danger : THEME.colors.cyan }]}>
+            <Text style={styles.badgeText}>ICEBREAKER</Text>
           </View>
         </View>
         <Text style={styles.subtitle}>
           {timeLeft.isExpired
-            ? "Match has auto-dissolved to prevent ghosting deadlock."
-            : "Send the first message! Matches without messages dissolve after 48h to prevent ghosting."}
+            ? "This match has gently expired to keep your feed fresh."
+            : "Break the ice! Connections without a first message expire after 48 hours."}
         </Text>
       </View>
     </TouchableOpacity>

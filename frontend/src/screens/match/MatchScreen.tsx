@@ -42,20 +42,20 @@ export const MatchScreen = ({ navigation }: any) => {
 
   const handleUnmatch = () => {
     Alert.alert(
-      "Unmatch Partner?",
-      "Rule 6 Invariant: Unmatching will immediately end this match, unlock both candidates, and permanently purge all chat messages from the database with zero trace.",
+      "End Connection?",
+      "Are you sure you want to end this connection? This will close the match for both of you and your private conversation will disappear.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Yes, Unmatch",
+          text: "Yes, End Match",
           style: "destructive",
           onPress: async () => {
             try {
               await unmatch();
-              Alert.alert("Match Ended", "You are now unlocked to discover new connections.");
+              Alert.alert("Connection Ended", "You can now discover new connections.");
               navigation.navigate("FeedTab");
             } catch (err: any) {
-              Alert.alert("Error", err.message || "Failed to unmatch.");
+              Alert.alert("Error", err.message || "Failed to end connection.");
             }
           },
         },
@@ -193,8 +193,8 @@ export const MatchScreen = ({ navigation }: any) => {
 
             {/* Unmatch Action */}
             <TouchableOpacity style={styles.unmatchButton} onPress={handleUnmatch}>
-              <Ionicons name="close-circle-outline" size={16} color={THEME.colors.danger} />
-              <Text style={styles.unmatchButtonText}>Unmatch & Purge Chat</Text>
+              <Ionicons name="close-circle-outline" size={16} color={THEME.colors.textMuted} />
+              <Text style={styles.unmatchButtonText}>End Connection</Text>
             </TouchableOpacity>
           </View>
         </View>

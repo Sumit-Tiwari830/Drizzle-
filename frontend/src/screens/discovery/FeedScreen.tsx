@@ -68,14 +68,14 @@ export const FeedScreen = ({ navigation }: any) => {
   if (activeMatch || user?.isLocked) {
     return (
       <View style={styles.container}>
-        <AppHeader title="Exclusive" quotaRemaining={quotaRemaining} />
+        <AppHeader quotaRemaining={quotaRemaining} />
         <View style={styles.lockedContainer}>
           <View style={styles.lockIconCircle}>
-            <Ionicons name="lock-closed" size={48} color={THEME.colors.primary} />
+            <Ionicons name="heart" size={44} color={THEME.colors.primary} />
           </View>
-          <Text style={styles.lockedTitle}>1-to-1 Match Active</Text>
+          <Text style={styles.lockedTitle}>Exclusive Connection Active</Text>
           <Text style={styles.lockedSubtitle}>
-            Under Rule 2 of Exclusive Dating, your discovery feed is locked while you have an active match. Focus your attention entirely on your partner.
+            You are currently connected with your match. Discover is paused so you can give each other genuine, undivided attention.
           </Text>
 
           <TouchableOpacity
@@ -84,7 +84,7 @@ export const FeedScreen = ({ navigation }: any) => {
             activeOpacity={0.85}
           >
             <Ionicons name="chatbubbles" size={18} color="#FFF" />
-            <Text style={styles.goToMatchButtonText}>Go to Current Match</Text>
+            <Text style={styles.goToMatchButtonText}>Open Conversation</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -93,7 +93,7 @@ export const FeedScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <AppHeader title="Exclusive" quotaRemaining={quotaRemaining} />
+      <AppHeader quotaRemaining={quotaRemaining} />
 
       {loading ? (
         <View style={styles.centerContainer}>

@@ -232,8 +232,8 @@ export const ProfileScreen = ({ navigation }: any) => {
           activeOpacity={0.8}
         >
           <View style={styles.menuLeft}>
-            <Ionicons name="book-outline" size={20} color={THEME.colors.primary} />
-            <Text style={styles.menuTitle}>Review App Rules & Invariants</Text>
+            <Ionicons name="sparkles-outline" size={20} color={THEME.colors.primary} />
+            <Text style={styles.menuTitle}>Community Principles & Guidelines</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={THEME.colors.textMuted} />
         </TouchableOpacity>

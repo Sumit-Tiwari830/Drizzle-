@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../constants/theme";
 import { RulesModal } from "./RulesModal";
@@ -11,7 +11,7 @@ interface AppHeaderProps {
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
-  title = "Exclusive",
+  title,
   quotaRemaining,
   showRulesButton = true,
 }) => {
@@ -20,15 +20,29 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
-        <Ionicons name="heart" size={22} color={THEME.colors.primary} />
-        <Text style={styles.title}>{title}</Text>
+        {title && title !== "Drizzle" ? (
+          <View style={styles.subpageTitleRow}>
+            <Image
+              source={require("../../assets/icon.png")}
+              style={styles.smallIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.subpageTitle}>{title}</Text>
+          </View>
+        ) : (
+          <Image
+            source={require("../../assets/drizzle-logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        )}
       </View>
 
       <View style={styles.actionsRow}>
         {quotaRemaining !== undefined && (
           <View style={styles.quotaPill}>
-            <Ionicons name="sparkles" size={13} color={THEME.colors.purple} />
-            <Text style={styles.quotaText}>{quotaRemaining}/10</Text>
+            <Ionicons name="sparkles" size={13} color={THEME.colors.secondary} />
+            <Text style={styles.quotaText}>{quotaRemaining}/10 left</Text>
           </View>
         )}
 
@@ -38,8 +52,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             onPress={() => setRulesVisible(true)}
             activeOpacity={0.8}
           >
-            <Ionicons name="shield-outline" size={15} color={THEME.colors.primary} />
-            <Text style={styles.rulesButtonText}>Rules</Text>
+            <Ionicons name="sparkles-outline" size={14} color={THEME.colors.primaryDark} />
+            <Text style={styles.rulesButtonText}>Principles</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -55,21 +69,34 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: 10,
     backgroundColor: THEME.colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
-  title: {
-    fontSize: 20,
+  logo: {
+    width: 110,
+    height: 32,
+  },
+  subpageTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  smallIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+  },
+  subpageTitle: {
+    fontSize: 18,
     fontWeight: "800",
     color: THEME.colors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   actionsRow: {
     flexDirection: "row",
@@ -79,8 +106,8 @@ const styles = StyleSheet.create({
   quotaPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: THEME.colors.purple + "15",
-    paddingHorizontal: 8,
+    backgroundColor: THEME.colors.secondaryLight,
+    paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: THEME.borderRadius.full,
     gap: 4,
@@ -88,20 +115,22 @@ const styles = StyleSheet.create({
   quotaText: {
     fontSize: 12,
     fontWeight: "700",
-    color: THEME.colors.purple,
+    color: THEME.colors.secondary,
   },
   rulesButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: THEME.colors.primaryLight,
+    backgroundColor: THEME.colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: THEME.borderRadius.full,
     gap: 4,
   },
   rulesButtonText: {
     fontSize: 12,
     fontWeight: "700",
-    color: THEME.colors.primary,
+    color: THEME.colors.textPrimary,
   },
 });
