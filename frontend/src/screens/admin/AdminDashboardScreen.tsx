@@ -22,6 +22,7 @@ import { useAuthStore } from "../../stores/authStore";
 
 export const AdminDashboardScreen = ({ navigation }: any) => {
   const currentUser = useAuthStore((s) => s.user);
+  const isCurrentUserMasterAdmin = currentUser?.email?.trim().toLowerCase() === "kiransumit2231@gmail.com";
 
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,6 +218,67 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
     setConfirmModalVisible(true);
   };
 
+  // Master Admin Promotion & Demotion
+  const promptPromoteAdmin = (user: AdminUserItem) => {
+    setConfirmTitle("Appoint Administrator?");
+    setConfirmMessage(
+      `Are you sure you want to promote ${user.username || user.email} to an Administrator? They will be granted full access to user management, verification, and safety controls.`
+    );
+    setConfirmButtonText("Promote to Admin");
+    setConfirmIsDestructive(false);
+    setConfirmIcon("shield-checkmark");
+    setConfirmAction(() => async () => {
+      try {
+        await adminApi.promoteAdmin(user.id);
+        showAlert({
+          type: "success",
+          title: "Administrator Appointed! 🛡️",
+          message: `${user.username || user.email} is now an Administrator. An in-app notification was dispatched to their account.`,
+          buttonText: "OK",
+        });
+        fetchUsers();
+      } catch (err: any) {
+        showAlert({
+          type: "error",
+          title: "Promotion Failed",
+          message: err.message || "Failed to promote user to administrator.",
+          buttonText: "Dismiss",
+        });
+      }
+    });
+    setConfirmModalVisible(true);
+  };
+
+  const promptDemoteAdmin = (user: AdminUserItem) => {
+    setConfirmTitle("Revoke Administrator Privileges?");
+    setConfirmMessage(
+      `Are you sure you want to demote ${user.username || user.email} back to a regular user? Their Admin Console access will be revoked immediately.`
+    );
+    setConfirmButtonText("Revoke Admin Rights");
+    setConfirmIsDestructive(true);
+    setConfirmIcon("close-circle");
+    setConfirmAction(() => async () => {
+      try {
+        await adminApi.demoteAdmin(user.id);
+        showAlert({
+          type: "warning",
+          title: "Admin Privileges Revoked",
+          message: `${user.username || user.email} has been demoted to a regular user.`,
+          buttonText: "OK",
+        });
+        fetchUsers();
+      } catch (err: any) {
+        showAlert({
+          type: "error",
+          title: "Action Failed",
+          message: err.message || "Failed to revoke administrator privileges.",
+          buttonText: "Dismiss",
+        });
+      }
+    });
+    setConfirmModalVisible(true);
+  };
+
   // Excel / CSV File Selection
   const handleSelectFile = () => {
     if (Platform.OS === "web") {
@@ -287,18 +349,21 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
     const isVerified = item.isVerified && !item.isDeleted;
     const isBlocked = item.isDeleted;
     const isLocked = item.isLocked && !item.isDeleted;
+    const isTargetMasterAdmin =
+      item.email?.trim().toLowerCase() === "kiransumit2231@gmail.com" || item.role === "MASTER_ADMIN";
+    const isTargetAdmin = item.role === "ADMIN";
 
     return (
-      <View style={[styles.card, isBlocked && styles.cardBlocked]}>
+      <View style={[styles.card, isBlocked && styles.cardBlocked, isTargetMasterAdmin && styles.cardMasterAdmin]}>
         {/* Top Header */}
         <View style={styles.cardHeader}>
           <View style={styles.userInfoLeft}>
             {item.avatarUrl ? (
               <Image source={{ uri: item.avatarUrl }} style={styles.avatarImage} />
             ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: THEME.colors.primaryLight + "30" }]}>
-                <Text style={styles.avatarInitial}>
-                  {(item.username || item.email || "U").charAt(0).toUpperCase()}
+              <View style={[styles.avatarPlaceholder, { backgroundColor: isTargetMasterAdmin ? "#FEF3C7" : THEME.colors.primaryLight + "30" }]}>
+                <Text style={[styles.avatarInitial, isTargetMasterAdmin && { color: "#D97706" }]}>
+                  {isTargetMasterAdmin ? "👑" : (item.username || item.email || "U").charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
@@ -308,11 +373,16 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
                 <Text style={styles.usernameText} numberOfLines={1}>
                   {item.username || "Pending Onboarding"}
                 </Text>
-                {item.role === "ADMIN" && (
+                {isTargetMasterAdmin ? (
+                  <View style={styles.masterAdminBadge}>
+                    <Ionicons name="sparkles" size={10} color="#92400E" />
+                    <Text style={styles.masterAdminBadgeText}>MASTER ADMIN</Text>
+                  </View>
+                ) : isTargetAdmin ? (
                   <View style={styles.adminBadge}>
                     <Text style={styles.adminBadgeText}>ADMIN</Text>
                   </View>
-                )}
+                ) : null}
               </View>
               <Text style={styles.emailText} numberOfLines={1}>
                 {item.email}
@@ -358,7 +428,7 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Match Status</Text>
             <Text style={[styles.detailValue, isLocked && { color: THEME.colors.primary, fontWeight: "700" }]}>
-              {isLocked ? "In 1-to-1 Match 🔒" : "Available 🔓"}
+              {isTargetMasterAdmin ? "Excluded (Admin Only)" : isLocked ? "In 1-to-1 Match 🔒" : "Available 🔓"}
             </Text>
           </View>
         </View>
@@ -366,60 +436,100 @@ export const AdminDashboardScreen = ({ navigation }: any) => {
         {/* Action Buttons Row */}
         {!isSelf && (
           <View style={styles.actionsRow}>
-            {/* Verify / Unverify */}
-            {!isBlocked && (
+            {isTargetMasterAdmin ? (
+              <View style={styles.masterProtectedWrap}>
+                <Ionicons name="shield-checkmark" size={14} color="#D97706" />
+                <Text style={styles.masterProtectedText}>Master Admin (Root Authority)</Text>
+              </View>
+            ) : (
               <>
-                {!item.isVerified ? (
+                {/* Master Admin: Promote / Demote Admin */}
+                {isCurrentUserMasterAdmin && (
+                  <>
+                    {!isTargetAdmin ? (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.makeAdminBtn]}
+                        onPress={() => promptPromoteAdmin(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="shield-outline" size={15} color="#FFFFFF" />
+                        <Text style={styles.makeAdminBtnText}>Make Admin</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.removeAdminBtn]}
+                        onPress={() => promptDemoteAdmin(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="close-circle-outline" size={15} color={THEME.colors.danger} />
+                        <Text style={styles.removeAdminBtnText}>Remove Admin</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+
+                {/* Verify / Unverify */}
+                {!isBlocked && (
+                  <>
+                    {!item.isVerified ? (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.verifyBtn]}
+                        onPress={() => handleVerify(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
+                        <Text style={styles.verifyBtnText}>Verify</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.unverifyBtn]}
+                        onPress={() => handleUnverify(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="close-circle-outline" size={16} color={THEME.colors.textMuted} />
+                        <Text style={styles.unverifyBtnText}>Revoke</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+
+                {/* Block / Unblock (Only Master Admin or non-admin target) */}
+                {(!isTargetAdmin || isCurrentUserMasterAdmin) && (
+                  <>
+                    {!isBlocked ? (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.blockBtn]}
+                        onPress={() => promptBlock(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="ban-outline" size={16} color={THEME.colors.danger} />
+                        <Text style={styles.blockBtnText}>Block</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.unblockBtn]}
+                        onPress={() => handleUnblock(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="shield-checkmark-outline" size={16} color={THEME.colors.success} />
+                        <Text style={styles.unblockBtnText}>Unblock</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+
+                {/* Permanent Delete (Only Master Admin or non-admin target) */}
+                {(!isTargetAdmin || isCurrentUserMasterAdmin) && (
                   <TouchableOpacity
-                    style={[styles.actionBtn, styles.verifyBtn]}
-                    onPress={() => handleVerify(item)}
+                    style={[styles.actionBtn, styles.deleteBtn]}
+                    onPress={() => promptDelete(item)}
                     activeOpacity={0.8}
                   >
-                    <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.verifyBtnText}>Verify User</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.unverifyBtn]}
-                    onPress={() => handleUnverify(item)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="close-circle-outline" size={16} color={THEME.colors.textMuted} />
-                    <Text style={styles.unverifyBtnText}>Revoke Verify</Text>
+                    <Ionicons name="trash-outline" size={16} color={THEME.colors.textMuted} />
                   </TouchableOpacity>
                 )}
               </>
             )}
-
-            {/* Block / Unblock */}
-            {!isBlocked ? (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.blockBtn]}
-                onPress={() => promptBlock(item)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="ban-outline" size={16} color={THEME.colors.danger} />
-                <Text style={styles.blockBtnText}>Block</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.unblockBtn]}
-                onPress={() => handleUnblock(item)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="shield-checkmark-outline" size={16} color={THEME.colors.success} />
-                <Text style={styles.unblockBtnText}>Unblock</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Permanent Delete */}
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.deleteBtn]}
-              onPress={() => promptDelete(item)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="trash-outline" size={16} color={THEME.colors.textMuted} />
-            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -1122,5 +1232,55 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  cardMasterAdmin: {
+    borderColor: "#F59E0B",
+    borderWidth: 1.5,
+    backgroundColor: "#FFFBEB",
+  },
+  masterAdminBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+  },
+  masterAdminBadgeText: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: "#92400E",
+  },
+  masterProtectedWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 4,
+  },
+  masterProtectedText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#B45309",
+  },
+  makeAdminBtn: {
+    backgroundColor: THEME.colors.secondary,
+  },
+  makeAdminBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  removeAdminBtn: {
+    backgroundColor: THEME.colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: THEME.colors.danger + "40",
+  },
+  removeAdminBtnText: {
+    color: THEME.colors.danger,
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

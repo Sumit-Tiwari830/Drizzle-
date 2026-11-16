@@ -57,6 +57,10 @@ export class RequestService {
       throw new ApiError(400, "You are currently in an active match and cannot send new requests");
     }
 
+    if (sender.email.toLowerCase() === "kiransumit2231@gmail.com" || sender.role === "MASTER_ADMIN") {
+      throw new ApiError(400, "Master Admin accounts cannot send or participate in dating connections.");
+    }
+
     // 2. Check receiver status
     const [receiver] = await db
       .select()
@@ -66,6 +70,10 @@ export class RequestService {
 
     if (!receiver) {
       throw new ApiError(404, "User not found or account deactivated");
+    }
+
+    if (receiver.email.toLowerCase() === "kiransumit2231@gmail.com" || receiver.role === "MASTER_ADMIN") {
+      throw new ApiError(400, "This user is a system administrator and is not available for dating connections.");
     }
 
     if (receiver.isLocked) {

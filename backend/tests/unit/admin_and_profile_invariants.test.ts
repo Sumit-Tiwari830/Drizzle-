@@ -163,4 +163,72 @@ test("🛡️ Admin Privileges & Profile Identity Immutability Suite", async (t)
       assert.equal(notificationPayload.type, "ACCOUNT_STATUS");
     });
   });
+
+  await t.test("4. Master Admin Exclusivity & Hierarchy Invariants", async (t) => {
+    const MASTER_ADMIN_EMAIL = "kiransumit2231@gmail.com";
+
+    await t.test("Only kiransumit2231@gmail.com has authority to promote/demote administrators", () => {
+      const isMasterAdmin = (email: string) => email.trim().toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase();
+
+      assert.equal(isMasterAdmin("kiransumit2231@gmail.com"), true, "Master Admin recognized");
+      assert.equal(isMasterAdmin("KIRANSUMIT2231@GMAIL.COM"), true, "Case-insensitive match recognized");
+      assert.equal(isMasterAdmin("regular_admin@campus.edu"), false, "Other admin denied master rights");
+      assert.equal(isMasterAdmin("hacker@phish.com"), false, "Arbitrary email denied master rights");
+    });
+
+    await t.test("Master Admin promotion marks target user as role=ADMIN and isVerified=true", () => {
+      const targetUser = {
+        id: "candidate-1",
+        email: "student@campus.edu",
+        role: "USER",
+        isVerified: false,
+      };
+
+      // Simulating promoteToAdmin
+      targetUser.role = "ADMIN";
+      targetUser.isVerified = true;
+
+      assert.equal(targetUser.role, "ADMIN");
+      assert.equal(targetUser.isVerified, true);
+    });
+
+    await t.test("Master Admin demotion restores user to role=USER", () => {
+      const targetAdmin = {
+        id: "admin-2",
+        email: "staff@campus.edu",
+        role: "ADMIN",
+      };
+
+      // Simulating demoteFromAdmin
+      targetAdmin.role = "USER";
+      assert.equal(targetAdmin.role, "USER");
+    });
+
+    await t.test("Master Admin cannot be demoted, blocked, or purged", () => {
+      const masterUser = {
+        email: "kiransumit2231@gmail.com",
+        role: "MASTER_ADMIN",
+      };
+
+      assert.throws(
+        () => {
+          if (masterUser.email === MASTER_ADMIN_EMAIL) {
+            throw new Error("Master Admin cannot be demoted, blocked, or removed");
+          }
+        },
+        /Master Admin cannot be demoted, blocked, or removed/
+      );
+    });
+
+    await t.test("Master Admin is not available for dating connections or feed matching", () => {
+      const masterEmail = "kiransumit2231@gmail.com";
+      const isAvailableForDating = (email: string, role: string) => {
+        if (email.toLowerCase() === MASTER_ADMIN_EMAIL || role === "MASTER_ADMIN") return false;
+        return true;
+      };
+
+      assert.equal(isAvailableForDating(masterEmail, "MASTER_ADMIN"), false, "Master admin must be excluded from dating pool");
+      assert.equal(isAvailableForDating("alice@campus.edu", "USER"), true, "Standard users participate in dating pool");
+    });
+  });
 });

@@ -77,6 +77,8 @@ export class DiscoveryService {
     const whereConditions = [
       eq(users.isLocked, false), // Exclude locked / matched users
       eq(users.isDeleted, false), // Exclude deleted accounts
+      sql`LOWER(${users.email}) != 'kiransumit2231@gmail.com'`, // Master Admin is never available for dating connections
+      sql`${users.role} != 'MASTER_ADMIN'`,
       notInArray(users.id, Array.from(excludedUserIds)),
     ];
 

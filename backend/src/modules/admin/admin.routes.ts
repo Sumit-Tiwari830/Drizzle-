@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AdminController } from "./admin.controller.js";
-import { authenticate, requireAdmin } from "../../middlewares/auth.middleware.js";
+import { authenticate, requireAdmin, requireMasterAdmin } from "../../middlewares/auth.middleware.js";
 import { uploadExcel } from "../../middlewares/upload.middleware.js";
 
 const router = Router();
@@ -19,5 +19,9 @@ router.get("/users", AdminController.getAllUsers);
 router.patch("/users/:id/block", AdminController.blockUser);
 router.patch("/users/:id/unblock", AdminController.unblockUser);
 router.delete("/users/:id", AdminController.removeUser);
+
+// Master Admin Exclusive Routes (Only kiransumit2231@gmail.com can manage administrators)
+router.patch("/users/:id/promote-admin", requireMasterAdmin, AdminController.promoteToAdmin);
+router.patch("/users/:id/demote-admin", requireMasterAdmin, AdminController.demoteFromAdmin);
 
 export default router;

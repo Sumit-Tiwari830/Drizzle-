@@ -194,6 +194,14 @@ export const adminApi = {
     const res = await apiClient.delete(`/admin/users/${userId}`);
     return res.data;
   },
+  promoteAdmin: async (userId: string) => {
+    const res = await apiClient.patch(`/admin/users/${userId}/promote-admin`);
+    return res.data;
+  },
+  demoteAdmin: async (userId: string) => {
+    const res = await apiClient.patch(`/admin/users/${userId}/demote-admin`);
+    return res.data;
+  },
 };
 
 // ==========================================

@@ -78,6 +78,28 @@ export class AdminController {
     }
   }
 
+  static async promoteToAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const targetUserId = req.params.id as string;
+      const requesterUserId = req.user!.id;
+      const result = await AdminService.promoteToAdmin(targetUserId, requesterUserId);
+      return sendResponse(res, 200, true, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async demoteFromAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const targetUserId = req.params.id as string;
+      const requesterUserId = req.user!.id;
+      const result = await AdminService.demoteFromAdmin(targetUserId, requesterUserId);
+      return sendResponse(res, 200, true, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async removeUser(req: Request, res: Response, next: NextFunction) {
     try {
       const targetUserId = req.params.id as string;

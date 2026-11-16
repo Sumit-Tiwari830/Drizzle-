@@ -14,6 +14,13 @@ declare global {
   }
 }
 
+export const MASTER_ADMIN_EMAIL = "kiransumit2231@gmail.com";
+
+export const isMasterAdmin = (user?: User): boolean => {
+  if (!user || !user.email) return false;
+  return user.email.trim().toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase();
+};
+
 /**
  * Verifies JWT token and attaches authenticated user to Request
  */
@@ -62,6 +69,9 @@ export const authorizeRoles = (...roles: string[]) => {
     if (!req.user) {
       return next(new ApiError(401, "Authentication required"));
     }
+    if (isMasterAdmin(req.user)) {
+      return next(); // Master Admin possesses all role authorities
+    }
     if (!roles.includes(req.user.role)) {
       return next(
         new ApiError(
@@ -75,9 +85,35 @@ export const authorizeRoles = (...roles: string[]) => {
 };
 
 /**
- * Shortcut helper for Admin-only routes
+ * Shortcut helper for Admin-only routes (allows ADMIN, MASTER_ADMIN, and kiransumit2231@gmail.com)
  */
-export const requireAdmin = authorizeRoles("ADMIN");
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    return next(new ApiError(401, "Authentication required"));
+  }
+  if (req.user.role === "ADMIN" || req.user.role === "MASTER_ADMIN" || isMasterAdmin(req.user)) {
+    return next();
+  }
+  return next(new ApiError(403, "Access denied: Administrator privileges required."));
+};
+
+/**
+ * Strictly Master Admin exclusive routes (Only kiransumit2231@gmail.com can manage administrators)
+ */
+export const requireMasterAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    return next(new ApiError(401, "Authentication required"));
+  }
+  if (!isMasterAdmin(req.user)) {
+    return next(
+      new ApiError(
+        403,
+        `Access denied: Only Master Admin (${MASTER_ADMIN_EMAIL}) has authority to create or remove administrators.`
+      )
+    );
+  }
+  next();
+};
 
 /**
  * Middleware ensuring user has verified their email address via OTP.

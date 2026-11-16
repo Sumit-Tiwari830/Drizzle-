@@ -94,6 +94,34 @@ export const FeedScreen = ({ navigation }: any) => {
     );
   }
 
+  // Master Admin View: Root Authority, Excluded from Dating Pool
+  if (user?.email?.toLowerCase() === "kiransumit2231@gmail.com") {
+    return (
+      <View style={styles.container}>
+        <AppHeader />
+        <View style={styles.lockedContainer}>
+          <View style={styles.masterNoticeCircle}>
+            <Ionicons name="shield-checkmark" size={44} color={THEME.colors.primaryDark} />
+          </View>
+          <Text style={styles.lockedTitle}>Master Administrator</Text>
+          <Text style={styles.lockedSubtitle}>
+            This account ({user?.email}) has root platform authority to appoint and remove administrators, verify accounts, and manage safety controls.
+            {"\n\n"}
+            It is intentionally not enrolled in candidate matching or connection requests.
+          </Text>
+          <TouchableOpacity
+            style={styles.openAdminBtn}
+            onPress={() => navigation.navigate("AdminDashboard")}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="settings-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.openAdminBtnText}>Open Admin Console</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <AppHeader quotaRemaining={quotaRemaining} />
@@ -228,6 +256,30 @@ const styles = StyleSheet.create({
   goToMatchButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "700",
+  },
+  masterNoticeCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: THEME.colors.primaryLight + "30",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  openAdminBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: THEME.colors.primaryDark,
+    paddingHorizontal: 22,
+    paddingVertical: 13,
+    borderRadius: THEME.borderRadius.md,
+    marginTop: 8,
+  },
+  openAdminBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "700",
   },
 });

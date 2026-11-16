@@ -21,6 +21,8 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
@@ -120,10 +122,22 @@ export const RegisterScreen = ({ navigation }: any) => {
                 style={styles.input}
                 placeholder="Minimum 6 characters"
                 placeholderTextColor={THEME.colors.textMuted}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.eyeButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={THEME.colors.textMuted}
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -135,10 +149,22 @@ export const RegisterScreen = ({ navigation }: any) => {
                 style={styles.input}
                 placeholder="Re-enter password"
                 placeholderTextColor={THEME.colors.textMuted}
-                secureTextEntry
+                secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.eyeButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={THEME.colors.textMuted}
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -278,5 +304,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: THEME.colors.primary,
+  },
+  eyeButton: {
+    padding: 6,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

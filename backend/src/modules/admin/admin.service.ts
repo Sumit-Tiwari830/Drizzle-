@@ -267,6 +267,84 @@ export class AdminService {
   }
 
   /**
+   * Promote a user to Administrator (Master Admin exclusive)
+   */
+  static async promoteToAdmin(targetUserId: string, requesterUserId?: string) {
+    if (requesterUserId) {
+      const [requester] = await db.select().from(users).where(eq(users.id, requesterUserId)).limit(1);
+      if (!requester || requester.email.toLowerCase() !== "kiransumit2231@gmail.com") {
+        throw new ApiError(403, "Only Master Admin (kiransumit2231@gmail.com) can appoint administrators");
+      }
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
+    }
+
+    if (user.role === "ADMIN" || user.role === "MASTER_ADMIN") {
+      throw new ApiError(400, "User is already an administrator");
+    }
+
+    await db.update(users).set({ role: "ADMIN", isVerified: true }).where(eq(users.id, targetUserId));
+
+    await NotificationService.createNotification(
+      targetUserId,
+      "SYSTEM",
+      "Admin Privileges Granted 🛡️",
+      "You have been appointed as an Administrator by Master Admin. The Admin Console is now available in your profile.",
+      { role: "ADMIN", promotedBy: "kiransumit2231@gmail.com" }
+    );
+
+    return { message: `User ${user.email} has been promoted to Administrator` };
+  }
+
+  /**
+   * Demote an Administrator to regular user (Master Admin exclusive)
+   */
+  static async demoteFromAdmin(targetUserId: string, requesterUserId?: string) {
+    if (requesterUserId) {
+      const [requester] = await db.select().from(users).where(eq(users.id, requesterUserId)).limit(1);
+      if (!requester || requester.email.toLowerCase() !== "kiransumit2231@gmail.com") {
+        throw new ApiError(403, "Only Master Admin (kiransumit2231@gmail.com) can remove administrators");
+      }
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin cannot be demoted");
+    }
+
+    if (user.role !== "ADMIN") {
+      throw new ApiError(400, "User is not an administrator");
+    }
+
+    await db.update(users).set({ role: "USER" }).where(eq(users.id, targetUserId));
+
+    await NotificationService.createNotification(
+      targetUserId,
+      "SYSTEM",
+      "Admin Privileges Revoked",
+      "Your Administrator privileges have been revoked by Master Admin.",
+      { role: "USER", demotedBy: "kiransumit2231@gmail.com" }
+    );
+
+    return { message: `Administrator privileges revoked for ${user.email}` };
+  }
+
+  /**
    * Block / Deactivate any user
    * - Sets isDeleted = true, deletedAt = NOW()
    * - If matched, dissolves match, unlocks partner, cleans chat
@@ -280,6 +358,14 @@ export class AdminService {
     const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
     if (!user) {
       throw new ApiError(404, "User not found");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin account cannot be blocked or deactivated");
     }
 
     // 1. Check if user is in an active match and release partner
@@ -355,6 +441,10 @@ export class AdminService {
       throw new ApiError(404, "User not found");
     }
 
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
+    }
+
     await db
       .update(users)
       .set({ isDeleted: false, deletedAt: null })
@@ -382,6 +472,10 @@ export class AdminService {
     const [user] = await db.select().from(users).where(eq(users.id, targetUserId)).limit(1);
     if (!user) {
       throw new ApiError(404, "User not found");
+    }
+
+    if (user.email.toLowerCase() === "kiransumit2231@gmail.com") {
+      throw new ApiError(400, "Master Admin account cannot be removed or deleted");
     }
 
     // Release partner if in active match

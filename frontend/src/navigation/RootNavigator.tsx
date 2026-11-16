@@ -59,6 +59,22 @@ export const RootNavigator = () => {
                   logout();
                 },
               });
+            } else if (notif.title?.includes("Admin Privileges Granted")) {
+              showAlert({
+                type: "success",
+                title: notif.title || "Administrator Appointed! 🛡️",
+                message: notif.message || "You have been appointed as an Administrator by Master Admin.",
+                buttonText: "Got It",
+              });
+              checkSession();
+            } else if (notif.title?.includes("Admin Privileges Revoked")) {
+              showAlert({
+                type: "warning",
+                title: notif.title || "Admin Privileges Revoked",
+                message: notif.message || "Your Administrator privileges have been revoked by Master Admin.",
+                buttonText: "OK",
+              });
+              checkSession();
             }
           });
         }

