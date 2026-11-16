@@ -1,27 +1,27 @@
 import { relations } from "drizzle-orm";
-import { masterDirectory } from "./masterDirectory";
-import { users } from "./users";
-import { profiles } from "./profiles";
-import { requests } from "./requests";
-import { matches } from "./matches";
-import { otps } from "./otps";
-import { userDevices } from "./devices";
+import { masterDirectory } from "./masterDirectory.js";
+import { users } from "./users.js";
+import { profiles } from "./profiles.js";
+import { requests } from "./requests.js";
+import { matches } from "./matches.js";
+import { otps } from "./otps.js";
+import { userDevices } from "./devices.js";
 
-export { masterDirectory } from "./masterDirectory";
-export { users } from "./users";
-export { profiles } from "./profiles";
-export { requests } from "./requests";
-export { matches } from "./matches";
-export { otps } from "./otps";
-export { userDevices } from "./devices";
+export { masterDirectory } from "./masterDirectory.js";
+export { users } from "./users.js";
+export { profiles } from "./profiles.js";
+export { requests } from "./requests.js";
+export { matches } from "./matches.js";
+export { otps } from "./otps.js";
+export { userDevices } from "./devices.js";
 
-export type { MasterDirectoryRecord, NewMasterDirectoryRecord } from "./masterDirectory";
-export type { User, NewUser } from "./users";
-export type { Profile, NewProfile } from "./profiles";
-export type { Request as RequestRecord, NewRequest as NewRequestRecord } from "./requests";
-export type { Match, NewMatch } from "./matches";
-export type { Otp, NewOtp } from "./otps";
-export type { UserDevice, NewUserDevice } from "./devices";
+export type { MasterDirectoryRecord, NewMasterDirectoryRecord } from "./masterDirectory.js";
+export type { User, NewUser } from "./users.js";
+export type { Profile, NewProfile } from "./profiles.js";
+export type { Request as RequestRecord, NewRequest as NewRequestRecord } from "./requests.js";
+export type { Match, NewMatch } from "./matches.js";
+export type { Otp, NewOtp } from "./otps.js";
+export type { UserDevice, NewUserDevice } from "./devices.js";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {

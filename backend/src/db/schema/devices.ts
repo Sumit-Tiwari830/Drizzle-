@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
-import { users } from "./users";
+import { users } from "./users.js";
 
 /**
  * User Devices Table for Mobile & Web Push Notifications

@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, date, text, jsonb, boolean, timestamp } from "drizzle-orm/pg-core";
-import { users } from "./users";
+import { users } from "./users.js";
 
 /**
  * User Profiles Table (Anonymous-first / Privacy-first)
