@@ -22,6 +22,7 @@ import { NotificationBoxModal } from "../../components/NotificationBoxModal";
 import { profileApi } from "../../api";
 import { useAuthStore } from "../../stores/authStore";
 import { useNotificationStore } from "../../stores/notificationStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const ProfileScreen = ({ navigation }: any) => {
   const profile = useAuthStore((s) => s.profile);
@@ -65,7 +66,12 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   const handleSaveProfile = async () => {
     if (!editUsername.trim() || editUsername.trim().length < 3) {
-      Alert.alert("Invalid Username", "Username must be at least 3 characters long.");
+      showAlert({
+        type: "warning",
+        title: "Invalid Username",
+        message: "Username must be at least 3 characters long.",
+        buttonText: "Got It",
+      });
       return;
     }
 
@@ -87,8 +93,19 @@ export const ProfileScreen = ({ navigation }: any) => {
 
       await refreshProfile();
       setEditModalVisible(false);
+      showAlert({
+        type: "success",
+        title: "Profile Updated! 🎉",
+        message: "Your profile details have been saved successfully.",
+        buttonText: "Great",
+      });
     } catch (err: any) {
-      Alert.alert("Update Failed", err.message || "Failed to update profile.");
+      showAlert({
+        type: "error",
+        title: "Update Failed",
+        message: err.message || "Failed to update profile details.",
+        buttonText: "Dismiss",
+      });
     } finally {
       setSavingProfile(false);
     }
@@ -99,7 +116,11 @@ export const ProfileScreen = ({ navigation }: any) => {
       await profileApi.updateProfile({ isRegionVisible: value });
       await refreshProfile();
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to update region visibility.");
+      showAlert({
+        type: "error",
+        title: "Update Error",
+        message: err.message || "Failed to update region visibility.",
+      });
     }
   };
 
@@ -108,14 +129,22 @@ export const ProfileScreen = ({ navigation }: any) => {
       await profileApi.updateProfile({ isPublicReveal: value });
       await refreshProfile();
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to update reveal setting.");
+      showAlert({
+        type: "error",
+        title: "Update Error",
+        message: err.message || "Failed to update reveal setting.",
+      });
     }
   };
 
   const handleAddPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission Required", "Please allow gallery access to upload photos.");
+      showAlert({
+        type: "warning",
+        title: "Permission Required",
+        message: "Please allow photo library access to upload photos.",
+      });
       return;
     }
 
@@ -138,8 +167,17 @@ export const ProfileScreen = ({ navigation }: any) => {
 
         await profileApi.uploadPhoto(formData);
         await refreshProfile();
+        showAlert({
+          type: "success",
+          title: "Photo Uploaded! 📸",
+          message: "Your photo was successfully uploaded to Cloudinary.",
+        });
       } catch (err: any) {
-        Alert.alert("Upload Failed", err.message || "Failed to upload photo.");
+        showAlert({
+          type: "error",
+          title: "Upload Failed",
+          message: err.message || "Failed to upload photo.",
+        });
       } finally {
         setUploading(false);
       }
@@ -154,7 +192,11 @@ export const ProfileScreen = ({ navigation }: any) => {
       await refreshProfile();
       setPhotoToDelete(null);
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to delete photo.");
+      showAlert({
+        type: "error",
+        title: "Delete Error",
+        message: err.message || "Failed to delete photo.",
+      });
     } finally {
       setModalLoading(false);
     }
@@ -166,7 +208,11 @@ export const ProfileScreen = ({ navigation }: any) => {
       await logout();
       setShowLogoutModal(false);
     } catch (err: any) {
-      Alert.alert("Sign Out Error", err.message || "Failed to sign out.");
+      showAlert({
+        type: "error",
+        title: "Sign Out Error",
+        message: err.message || "Failed to sign out.",
+      });
     } finally {
       setModalLoading(false);
     }
@@ -179,7 +225,11 @@ export const ProfileScreen = ({ navigation }: any) => {
       await logout();
       setShowDeleteAccountModal(false);
     } catch (err: any) {
-      Alert.alert("Delete Error", err.message || "Failed to delete account.");
+      showAlert({
+        type: "error",
+        title: "Delete Error",
+        message: err.message || "Failed to delete account.",
+      });
     } finally {
       setModalLoading(false);
     }

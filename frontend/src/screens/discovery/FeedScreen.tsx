@@ -17,6 +17,7 @@ import { discoveryApi } from "../../api";
 import { CandidateFeedItem } from "../../types";
 import { useAuthStore } from "../../stores/authStore";
 import { useMatchStore } from "../../stores/matchStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const FeedScreen = ({ navigation }: any) => {
   const [candidates, setCandidates] = useState<CandidateFeedItem[]>([]);
@@ -54,10 +55,12 @@ export const FeedScreen = ({ navigation }: any) => {
 
   const handleRequestSent = async (receiverId: string, note?: string) => {
     await discoveryApi.sendRequest(receiverId, note);
-    Alert.alert(
-      "Connect Request Sent! 💌",
-      "Your request has been dispatched with a 48-hour response window. You will be notified when they respond."
-    );
+    showAlert({
+      type: "success",
+      title: "Connect Request Sent! 💌",
+      message: "Your request has been dispatched with a 48-hour response window. You will be notified when they respond.",
+      buttonText: "Awesome",
+    });
     // Decrement local quota
     setQuotaRemaining((prev) => Math.max(0, prev - 1));
     // Remove candidate from current feed view

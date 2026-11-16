@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
 import { authApi } from "../../api";
 import { useAuthStore } from "../../stores/authStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
@@ -25,7 +26,12 @@ export const LoginScreen = ({ navigation }: any) => {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Missing Fields", "Please enter both your email and password.");
+      showAlert({
+        type: "warning",
+        title: "Missing Fields",
+        message: "Please enter both your email address and password.",
+        buttonText: "Got It",
+      });
       return;
     }
 
@@ -34,17 +40,37 @@ export const LoginScreen = ({ navigation }: any) => {
       const res = await authApi.login(email.trim().toLowerCase(), password);
       // If user email is unverified, redirect to OTP screen
       if (!res.data.user.isEmailVerified) {
-        Alert.alert("Verification Required", "Please verify your email OTP before logging in.");
-        navigation.navigate("VerifyOtp", { email: email.trim().toLowerCase() });
+        showAlert({
+          type: "info",
+          title: "Verification Required",
+          message: "Please verify your email address before logging in.",
+          buttonText: "Enter Code",
+          onConfirm: () => {
+            navigation.navigate("VerifyOtp", { email: email.trim().toLowerCase() });
+          },
+        });
         return;
       }
       const token = res.data?.accessToken || res.data?.token;
       if (!token) {
         throw new Error("Authentication token not returned by server.");
       }
-      await login(token, res.data.user);
+      showAlert({
+        type: "success",
+        title: "Login Successful",
+        message: `Welcome back${res.data?.user?.profile?.username ? `, ${res.data.user.profile.username}` : ""}! Opening your Drizzle account...`,
+        buttonText: "Continue",
+        onConfirm: async () => {
+          await login(token, res.data.user);
+        },
+      });
     } catch (err: any) {
-      Alert.alert("Login Failed", err.message || "Invalid credentials.");
+      showAlert({
+        type: "error",
+        title: "Login Failed",
+        message: err.message || "Invalid email or password. Please check your credentials.",
+        buttonText: "Try Again",
+      });
     } finally {
       setLoading(false);
     }

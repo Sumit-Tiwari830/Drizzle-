@@ -16,6 +16,7 @@ import { IcebreakerBanner } from "../../components/IcebreakerBanner";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useMatchStore } from "../../stores/matchStore";
 import { useAuthStore } from "../../stores/authStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const MatchScreen = ({ navigation }: any) => {
   const activeMatch = useMatchStore((s) => s.activeMatch);
@@ -35,12 +36,18 @@ export const MatchScreen = ({ navigation }: any) => {
   const handleReveal = async () => {
     try {
       await requestReveal();
-      Alert.alert(
-        "Reveal Requested",
-        "You have requested to mutually reveal real identities. Once your partner accepts, real photos and details will unlock!"
-      );
+      showAlert({
+        type: "success",
+        title: "Reveal Requested 🔓",
+        message: "You have requested to mutually reveal real identities. Once your partner accepts, real photos and verified names will unlock!",
+        buttonText: "Okay",
+      });
     } catch (err: any) {
-      Alert.alert("Reveal Error", err.message || "Failed to send reveal request.");
+      showAlert({
+        type: "error",
+        title: "Reveal Request Failed",
+        message: err.message || "Failed to send reveal request.",
+      });
     }
   };
 
@@ -50,8 +57,18 @@ export const MatchScreen = ({ navigation }: any) => {
       await unmatch();
       setShowUnmatchModal(false);
       navigation.navigate("FeedTab");
+      showAlert({
+        type: "info",
+        title: "Connection Ended",
+        message: "You are now unlocked and can explore new connections in the discovery feed.",
+        buttonText: "Continue",
+      });
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to end connection.");
+      showAlert({
+        type: "error",
+        title: "Failed to End Connection",
+        message: err.message || "An error occurred while ending the connection.",
+      });
     } finally {
       setUnmatching(false);
     }

@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
 import { authApi } from "../../api";
 import { useAuthStore } from "../../stores/authStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const VerifyOtpScreen = ({ route, navigation }: any) => {
   const email = route.params?.email || "";
@@ -32,22 +33,39 @@ export const VerifyOtpScreen = ({ route, navigation }: any) => {
 
   const handleVerify = async () => {
     if (otp.trim().length !== 6) {
-      Alert.alert("Invalid Code", "Please enter the complete 6-digit verification code.");
+      showAlert({
+        type: "warning",
+        title: "Invalid Code",
+        message: "Please enter the complete 6-digit verification code.",
+        buttonText: "Got It",
+      });
       return;
     }
 
     try {
       setLoading(true);
       const res = await authApi.verifyOtp(email, otp.trim());
-      Alert.alert("Account Verified!", "Your email has been verified. Welcome to Exclusive!");
       const token = res.data?.accessToken || res.data?.token;
-      if (token && res.data?.user) {
-        await login(token, res.data.user);
-      } else {
-        navigation.navigate("Login");
-      }
+      showAlert({
+        type: "success",
+        title: "Account Verified! 🎉",
+        message: "Your email has been successfully verified. Welcome to Drizzle!",
+        buttonText: "Let's Go",
+        onConfirm: async () => {
+          if (token && res.data?.user) {
+            await login(token, res.data.user);
+          } else {
+            navigation.navigate("Login");
+          }
+        },
+      });
     } catch (err: any) {
-      Alert.alert("Verification Error", err.message || "Invalid or expired OTP code.");
+      showAlert({
+        type: "error",
+        title: "Verification Error",
+        message: err.message || "Invalid or expired verification code. Please check and try again.",
+        buttonText: "Try Again",
+      });
     } finally {
       setLoading(false);
     }
@@ -58,9 +76,19 @@ export const VerifyOtpScreen = ({ route, navigation }: any) => {
     try {
       await authApi.resendOtp(email);
       setResendCooldown(60);
-      Alert.alert("Code Resent", `A fresh 6-digit verification code was sent to ${email}.`);
+      showAlert({
+        type: "success",
+        title: "Code Resent 📬",
+        message: `A fresh 6-digit verification code has been dispatched to ${email}.`,
+        buttonText: "Okay",
+      });
     } catch (err: any) {
-      Alert.alert("Resend Failed", err.message || "Failed to resend OTP.");
+      showAlert({
+        type: "error",
+        title: "Resend Failed",
+        message: err.message || "Failed to resend verification code. Please try again in a moment.",
+        buttonText: "Dismiss",
+      });
     }
   };
 

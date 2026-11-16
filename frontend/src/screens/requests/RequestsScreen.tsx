@@ -17,6 +17,7 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { requestsApi } from "../../api";
 import { ConnectRequest } from "../../types";
 import { useMatchStore } from "../../stores/matchStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const RequestsScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<"received" | "sent">("received");
@@ -58,8 +59,18 @@ export const RequestsScreen = ({ navigation }: any) => {
       setRequestToAccept(null);
       await fetchMatch();
       navigation.navigate("MatchTab");
+      showAlert({
+        type: "success",
+        title: "It's a Match! 🎉",
+        message: "You are now in an exclusive 1-to-1 match. Say hello before the 48-hour icebreaker countdown expires!",
+        buttonText: "Open Chat",
+      });
     } catch (err: any) {
-      Alert.alert("Unable to Accept", err.message || "Request is no longer active.");
+      showAlert({
+        type: "error",
+        title: "Unable to Accept",
+        message: err.message || "This request is no longer active or expired.",
+      });
       loadRequests();
     } finally {
       setModalLoading(false);
@@ -73,8 +84,18 @@ export const RequestsScreen = ({ navigation }: any) => {
       await requestsApi.reject(requestToDecline);
       setReceivedRequests((prev) => prev.filter((r) => r.id !== requestToDecline));
       setRequestToDecline(null);
+      showAlert({
+        type: "info",
+        title: "Request Declined",
+        message: "The invitation has been removed from your requests inbox.",
+        buttonText: "Done",
+      });
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to decline request.");
+      showAlert({
+        type: "error",
+        title: "Decline Failed",
+        message: err.message || "Failed to decline request.",
+      });
     } finally {
       setModalLoading(false);
     }

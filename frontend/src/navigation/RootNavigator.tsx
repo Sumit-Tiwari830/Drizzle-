@@ -11,6 +11,7 @@ import { useAuthStore } from "../stores/authStore";
 import { useNotificationStore } from "../stores/notificationStore";
 import { socketService } from "../services/socket.service";
 import { storage } from "../utils/storage";
+import { GlobalAlertModal } from "../components/GlobalAlertModal";
 import { THEME } from "../constants/theme";
 
 const Stack = createNativeStackNavigator();
@@ -51,28 +52,31 @@ export const RootNavigator = () => {
   const needsOnboarding = isAuthenticated && (!profile || !profile.username);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isAuthenticated ? (
-        // Public Auth Stack
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
-        </>
-      ) : needsOnboarding ? (
-        // First-Time Profile Onboarding Stack
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-      ) : (
-        // Authenticated App Stack
-        <>
-          <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen
-            name="ChatRoom"
-            component={ChatScreen}
-            options={{ presentation: "card" }}
-          />
-        </>
-      )}
-    </Stack.Navigator>
+    <View style={{ flex: 1 }}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
+          // Public Auth Stack
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
+          </>
+        ) : needsOnboarding ? (
+          // First-Time Profile Onboarding Stack
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        ) : (
+          // Authenticated App Stack
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen
+              name="ChatRoom"
+              component={ChatScreen}
+              options={{ presentation: "card" }}
+            />
+          </>
+        )}
+      </Stack.Navigator>
+      <GlobalAlertModal />
+    </View>
   );
 };

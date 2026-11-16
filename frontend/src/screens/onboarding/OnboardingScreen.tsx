@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { THEME } from "../../constants/theme";
 import { profileApi } from "../../api";
 import { useAuthStore } from "../../stores/authStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const OnboardingScreen = ({ navigation }: any) => {
   const [username, setUsername] = useState("");
@@ -48,7 +49,12 @@ export const OnboardingScreen = ({ navigation }: any) => {
   const handlePickAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission Required", "Please allow gallery access to upload your avatar.");
+      showAlert({
+        type: "warning",
+        title: "Permission Required",
+        message: "Please allow photo library access to upload your profile avatar.",
+        buttonText: "Got It",
+      });
       return;
     }
 
@@ -66,7 +72,12 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
   const handleSaveProfile = async () => {
     if (!username.trim() || !region.trim()) {
-      Alert.alert("Missing Information", "Please enter a username and your region/location.");
+      showAlert({
+        type: "warning",
+        title: "Missing Information",
+        message: "Please enter a username and your region/location to continue.",
+        buttonText: "Complete Profile",
+      });
       return;
     }
 
@@ -113,9 +124,19 @@ export const OnboardingScreen = ({ navigation }: any) => {
       });
 
       await refreshProfile();
-      Alert.alert("Profile Created!", "Welcome! Your exclusive dating journey begins now.");
+      showAlert({
+        type: "success",
+        title: "Profile Created! 🎉",
+        message: "Welcome to Drizzle! Your intentional 1-to-1 dating journey begins now.",
+        buttonText: "Start Exploring",
+      });
     } catch (err: any) {
-      Alert.alert("Failed to Save Profile", err.message || "An error occurred while saving profile.");
+      showAlert({
+        type: "error",
+        title: "Failed to Save Profile",
+        message: err.message || "An error occurred while saving your profile. Please try again.",
+        buttonText: "Dismiss",
+      });
     } finally {
       setLoading(false);
     }

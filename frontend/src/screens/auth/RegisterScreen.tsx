@@ -15,6 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../constants/theme";
 import { authApi } from "../../api";
+import { showAlert } from "../../stores/alertStore";
 
 export const RegisterScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
@@ -24,30 +25,54 @@ export const RegisterScreen = ({ navigation }: any) => {
 
   const handleRegister = async () => {
     if (!email.trim() || !password || !confirmPassword) {
-      Alert.alert("Missing Fields", "Please complete all registration fields.");
+      showAlert({
+        type: "warning",
+        title: "Missing Fields",
+        message: "Please complete all registration fields.",
+        buttonText: "Got It",
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Password Mismatch", "Passwords do not match. Please re-enter.");
+      showAlert({
+        type: "error",
+        title: "Password Mismatch",
+        message: "Passwords do not match. Please re-enter them carefully.",
+        buttonText: "Fix Passwords",
+      });
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert("Weak Password", "Password must be at least 6 characters.");
+      showAlert({
+        type: "warning",
+        title: "Weak Password",
+        message: "Password must be at least 6 characters long.",
+        buttonText: "Try Again",
+      });
       return;
     }
 
     try {
       setLoading(true);
       await authApi.register(email.trim().toLowerCase(), password);
-      Alert.alert(
-        "Verification Code Sent",
-        `We have sent a 6-digit verification code to ${email.trim().toLowerCase()}.`
-      );
-      navigation.navigate("VerifyOtp", { email: email.trim().toLowerCase() });
+      showAlert({
+        type: "success",
+        title: "Account Created! 🎉",
+        message: `We have sent a 6-digit verification code to ${email.trim().toLowerCase()}.`,
+        buttonText: "Enter Code",
+        onConfirm: () => {
+          navigation.navigate("VerifyOtp", { email: email.trim().toLowerCase() });
+        },
+      });
     } catch (err: any) {
-      Alert.alert("Registration Failed", err.message || "Failed to create account.");
+      showAlert({
+        type: "error",
+        title: "Registration Failed",
+        message: err.message || "Failed to create account. Please try again.",
+        buttonText: "Dismiss",
+      });
     } finally {
       setLoading(false);
     }

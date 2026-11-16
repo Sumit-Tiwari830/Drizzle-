@@ -18,6 +18,7 @@ import { socketService } from "../../services/socket.service";
 import { ChatMessage } from "../../types";
 import { useAuthStore } from "../../stores/authStore";
 import { useMatchStore } from "../../stores/matchStore";
+import { showAlert } from "../../stores/alertStore";
 
 export const ChatScreen = ({ route, navigation }: any) => {
   const matchId = route.params?.matchId;
@@ -92,21 +93,19 @@ export const ChatScreen = ({ route, navigation }: any) => {
 
     // Invariant: Instant match ended handling (Unmatch or 48-hour icebreaker expiry)
     socketService.onMatchEnded(({ reason }) => {
-      Alert.alert(
-        "Match Ended",
-        reason === "ICEBREAKER_48H_EXPIRED"
-          ? "This match has automatically expired because 48 hours passed without any message. You are now unlocked to find new connections!"
-          : "Your partner has ended the match. As per our zero-trace privacy policy, all chat messages have been permanently deleted.",
-        [
-          {
-            text: "Return to Feed",
-            onPress: async () => {
-              await fetchMatch();
-              navigation.navigate("FeedTab");
-            },
-          },
-        ]
-      );
+      showAlert({
+        type: "info",
+        title: "Match Ended",
+        message:
+          reason === "ICEBREAKER_48H_EXPIRED"
+            ? "This match has automatically expired because 48 hours passed without any message. You are now unlocked to find new connections!"
+            : "Your connection has ended. As per our zero-trace privacy policy, all chat messages have been permanently deleted.",
+        buttonText: "Return to Feed",
+        onConfirm: async () => {
+          await fetchMatch();
+          navigation.navigate("FeedTab");
+        },
+      });
     });
 
     return () => {

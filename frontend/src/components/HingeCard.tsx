@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CandidateFeedItem } from "../types";
 import { THEME } from "../constants/theme";
 import { ConfirmationModal } from "./ConfirmationModal";
+import { showAlert } from "../stores/alertStore";
 
 interface HingeCardProps {
   candidate: CandidateFeedItem;
@@ -50,10 +51,12 @@ export const HingeCard: React.FC<HingeCardProps> = ({
 
   const handleOpenConnect = (promptContext?: string) => {
     if (remainingQuota <= 0) {
-      Alert.alert(
-        "Daily Limit Reached",
-        "You have used your 10 daily connect requests. Your quota resets on a rolling 24-hour window to keep dating intentional."
-      );
+      showAlert({
+        type: "warning",
+        title: "Daily Limit Reached",
+        message: "You have used your 10 daily connect requests. Your quota resets on a rolling 24-hour window to keep dating intentional.",
+        buttonText: "Understood",
+      });
       return;
     }
     setSelectedPrompt(promptContext || null);
@@ -68,7 +71,11 @@ export const HingeCard: React.FC<HingeCardProps> = ({
       setModalVisible(false);
       setNote("");
     } catch (err: any) {
-      Alert.alert("Unable to Send Request", err.message || "Failed to send request.");
+      showAlert({
+        type: "error",
+        title: "Unable to Send Request",
+        message: err.message || "Failed to send request. Please try again.",
+      });
     } finally {
       setSubmitting(false);
     }
