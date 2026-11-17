@@ -11,10 +11,18 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://drizzle-backend-xxv9.onrender.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://drizzle-backend-xxv9.onrender.com"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://drizzle-backend-xxv9.onrender.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://drizzle-backend-xxv9.onrender.com"
+      }
     }
   },
   "submit": {
