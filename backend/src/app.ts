@@ -22,6 +22,16 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Root info endpoint
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    name: "Drizzle Dating App Backend API",
+    status: "online",
+    healthCheck: "/health",
+    api: "/api/v1",
+  });
+});
+
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
