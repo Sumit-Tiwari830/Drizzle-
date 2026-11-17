@@ -14,13 +14,20 @@
         "backgroundColor": "#FDFBF7",
         "foregroundImage": "./assets/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ragnar1ksteam.drizzle"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3f950b04-b01e-4e39-a031-977620a97c64"
+      }
+    },
+    "owner": "ragnar1ks-team"
   }
 }
