@@ -3,6 +3,9 @@ import { Platform } from "react-native";
 import { ChatMessage } from "../types";
 
 const getSocketUrl = () => {
+  if (process.env.EXPO_PUBLIC_SOCKET_URL) {
+    return process.env.EXPO_PUBLIC_SOCKET_URL;
+  }
   if (Platform.OS === "android") {
     return "http://10.0.2.2:5000";
   }

@@ -2,11 +2,15 @@ import axios from "axios";
 import { Platform } from "react-native";
 import { storage } from "../utils/storage";
 
+// In production: uses EXPO_PUBLIC_API_URL (e.g., https://drizzle-backend.onrender.com/api/v1)
 // In development:
 // Android Emulator uses 10.0.2.2 to access host machine
 // iOS Simulator uses localhost
 // Physical device uses your local LAN IP (e.g., 192.168.x.x)
 const getBaseUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
   if (Platform.OS === "android") {
     return "http://10.0.2.2:5000/api/v1";
   }
